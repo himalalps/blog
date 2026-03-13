@@ -11,7 +11,7 @@
       <a
         v-for="post in searchResults"
         :key="post.slug"
-        :href="`/posts/${post.slug}`"
+        :href="`${baseUrl}/posts/${post.slug}`"
         class="search-result-item"
       >
         <h3>{{ post.title }}</h3>
@@ -26,6 +26,8 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue';
+
+const baseUrl = import.meta.env.BASE_URL;
 
 const searchQuery = ref('');
 const showResults = ref(false);
@@ -63,7 +65,7 @@ const searchResults = computed(() => {
 
 const handleEnter = () => {
   if (searchQuery.value) {
-    window.location.href = `/search?q=${encodeURIComponent(searchQuery.value)}`;
+    window.location.href = `${baseUrl}/search?q=${encodeURIComponent(searchQuery.value)}`;
   }
 };
 

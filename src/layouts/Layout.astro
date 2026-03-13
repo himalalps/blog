@@ -23,15 +23,15 @@ const searchPostsJson = JSON.stringify(searchPosts);
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title || 'Vibe'}</title>
     {description && <meta name="description" content={description} />}
-    <link rel="alternate" type="application/rss+xml" href="/rss.xml" title="Vibe Blog" />
+    <link rel="alternate" type="application/rss+xml" href={`${import.meta.env.BASE_URL}/rss.xml`} title="Vibe Blog" />
   </head>
   <body>
     <header>
       <nav>
-        <a href="/" class="logo">VIBE</a>
+        <a href={import.meta.env.BASE_URL} class="logo">VIBE</a>
         <div class="nav-links">
-          <a href="/">Home</a>
-          <a href="/posts">Posts</a>
+          <a href={import.meta.env.BASE_URL}>Home</a>
+          <a href={`${import.meta.env.BASE_URL}/posts`}>Posts</a>
         </div>
         <div class="search">
           <Search client:load />

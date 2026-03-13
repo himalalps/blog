@@ -1,16 +1,21 @@
-export async function get() {
+export async function GET() {
   // Get all posts
-  const posts = await Astro.glob('../content/posts/*.md');
+  const postModules = import.meta.glob('../content/posts/*.md');
 
   // Transform posts data
-  const postsData = posts.map(post => ({
-    slug: post.file.split('/').pop().replace('.md', ''),
-    title: post.frontmatter.title,
-    description: post.frontmatter.description,
-    date: post.frontmatter.date
-  }));
+  const postsData = await Promise.all(
+    Object.entries(postModules).map(async ([path, resolver]) => {
+      const { frontmatter } = await resolver();
+      return {
+        slug: path.split('/').pop().replace('.md', ''),
+        title: frontmatter.title,
+        description: frontmatter.description,
+        date: frontmatter.date
+      };
+    })
+  );
 
-  return {
-    body: JSON.stringify(postsData)
-  };
+  return new Response(JSON.stringify(postsData), {
+    headers: { 'Content-Type': 'application/json' }
+  });
 }

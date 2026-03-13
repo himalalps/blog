@@ -1,8 +1,8 @@
 import rss from '@astrojs/rss';
 
 // In Astro RSS files, we need to use a different approach
-export async function get() {
-  const posts = await import.meta.glob('../../content/posts/*.md');
+export async function GET(context) {
+  const posts = import.meta.glob('../content/posts/*.md');
 
   const postEntries = await Promise.all(
     Object.entries(posts).map(async ([path, resolver]) => {
@@ -11,7 +11,7 @@ export async function get() {
         title: frontmatter.title,
         description: frontmatter.description,
         pubDate: new Date(frontmatter.date),
-        link: `/posts/${path.split('/').pop().replace('.md', '')}`,
+        link: `${import.meta.env.BASE_URL}/posts/${path.split('/').pop().replace('.md', '')}`,
       };
     })
   );
@@ -19,7 +19,7 @@ export async function get() {
   return rss({
     title: 'Vibe Blog',
     description: 'A fast, clean, and opinionated technical blog',
-    site: 'https://vibe.example.com',
+    site: context.site,
     items: postEntries,
     customData: `<language>en-us</language>`,
   });
