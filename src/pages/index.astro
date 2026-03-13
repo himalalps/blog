@@ -1,7 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 
-const posts = await Astro.glob('../content/posts/*.md');
+const posts = await Astro.glob('../content/*.md');
 ---
 
 <Layout title="Vibe - Technical Blog" description="A fast, clean, and opinionated technical blog">
@@ -13,7 +13,7 @@ const posts = await Astro.glob('../content/posts/*.md');
     <h2>Recent Posts</h2>
     <div class="posts-grid">
       {posts.map((post) => (
-        <a href={`${import.meta.env.BASE_URL}/posts/${post.file.split('/').pop().replace('.md', '')}`} class="post-card">
+        <a href={`${import.meta.env.BASE_URL}/${post.file.split('/').pop().replace('.md', '')}`} class="post-card">
           <h3>{post.frontmatter.title}</h3>
           <p>{post.frontmatter.description}</p>
           <p class="date">{post.frontmatter.date}</p>

@@ -1,6 +1,6 @@
 export async function GET() {
   // Get all posts
-  const postModules = import.meta.glob('../content/posts/*.md');
+  const postModules = import.meta.glob('../content/*.md');
 
   // Transform posts data
   const postsData = await Promise.all(

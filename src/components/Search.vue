@@ -3,7 +3,7 @@
     <input
       type="text"
       v-model="searchQuery"
-      placeholder="Search posts..."
+      placeholder="Search blogs..."
       class="search-input"
       @keyup.enter="handleEnter"
     />
@@ -11,7 +11,7 @@
       <a
         v-for="post in searchResults"
         :key="post.slug"
-        :href="`${baseUrl}/posts/${post.slug}`"
+        :href="`/${post.slug}`"
         class="search-result-item"
       >
         <h3>{{ post.title }}</h3>
@@ -25,36 +25,22 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 
-const baseUrl = import.meta.env.BASE_URL;
+const props = defineProps({
+  posts: {
+    type: Array,
+    default: () => []
+  }
+});
 
 const searchQuery = ref('');
 const showResults = ref(false);
 
-// Hardcoded posts data
-const posts = [
-  {
-    slug: "first-post",
-    title: "Getting Start with Astro",
-    description: "A beginner's guide to Astro framework"
-  },
-  {
-    slug: "test-post",
-    title: "Getting Started with Astro-2",
-    description: "S beginner'side to Astro framework"
-  },
-  {
-    slug: "implementing-search-functionality",
-    title: "Implementing Search Functionality in Vibe Blog",
-    description: "A step-by-step guide to implementing search functionality in an Astro-based blog"
-  }
-];
-
 const searchResults = computed(() => {
   if (!searchQuery.value) return [];
   
-  return posts.filter(post => {
+  return props.posts.filter(post => {
     const query = searchQuery.value.toLowerCase();
     return (
       post.title.toLowerCase().includes(query) ||
@@ -65,13 +51,22 @@ const searchResults = computed(() => {
 
 const handleEnter = () => {
   if (searchQuery.value) {
-    window.location.href = `${baseUrl}/search?q=${encodeURIComponent(searchQuery.value)}`;
+    window.location.href = `/blog/search?q=${encodeURIComponent(searchQuery.value)}`;
   }
 };
 
 // Show results when typing
 watch(searchQuery, () => {
   showResults.value = true;
+});
+
+// Hide results when clicking outside
+onMounted(() => {
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-container')) {
+      showResults.value = false;
+    }
+  });
 });
 </script>
 

@@ -5,7 +5,7 @@ import '../styles/global.css';
 const { title, description } = Astro.props;
 
 // Get all posts for search functionality
-const posts = await Astro.glob('../content/posts/*.md');
+const posts = await Astro.glob('../content/*.md');
 const searchPosts = posts.map(post => ({
   slug: post.file.split('/').pop().replace('.md', ''),
   title: post.frontmatter.title,
@@ -14,6 +14,7 @@ const searchPosts = posts.map(post => ({
 
 // Convert searchPosts to JSON string for passing to component
 const searchPostsJson = JSON.stringify(searchPosts);
+
 ---
 
 <!DOCTYPE html>
@@ -29,12 +30,8 @@ const searchPostsJson = JSON.stringify(searchPosts);
     <header>
       <nav>
         <a href={import.meta.env.BASE_URL} class="logo">VIBE</a>
-        <div class="nav-links">
-          <a href={import.meta.env.BASE_URL}>Home</a>
-          <a href={`${import.meta.env.BASE_URL}/posts`}>Posts</a>
-        </div>
         <div class="search">
-          <Search client:load />
+          <Search :posts="searchPosts" client:load />
         </div>
       </nav>
     </header>
@@ -42,8 +39,42 @@ const searchPostsJson = JSON.stringify(searchPosts);
       <slot />
     </main>
     <footer>
-      <p>&copy; {new Date().getFullYear()} Vibe. All rights reserved.</p>
+      <div class="footer-content">
+        <p>&copy; {new Date().getFullYear()} Vibe. All rights reserved.</p>
+        <a href={`${import.meta.env.BASE_URL}/rss.xml`} class="rss-link" title="RSS Feed">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 11a9 9 0 0 1 9 9"/>
+            <path d="M4 4a16 16 0 0 1 16 16"/>
+            <circle cx="5" cy="19" r="1"/>
+          </svg>
+        </a>
+      </div>
     </footer>
+    <style>
+      footer {
+        padding: 2rem 0;
+        text-align: center;
+      }
+      
+      .footer-content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+      }
+      
+      .rss-link {
+        color: var(--text-color);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        transition: color 0.2s ease;
+      }
+      
+      .rss-link:hover {
+        color: var(--accent-color, #0070f3);
+      }
+    </style>
     <!-- Copy code functionality -->
     <script>
       document.addEventListener('DOMContentLoaded', function() {
