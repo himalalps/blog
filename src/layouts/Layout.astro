@@ -1,0 +1,74 @@
+---
+import Search from '../components/Search.vue';
+import '../styles/global.css';
+
+const { title, description } = Astro.props;
+
+// Get all posts for search functionality
+const posts = await Astro.glob('../content/posts/*.md');
+const searchPosts = posts.map(post => ({
+  slug: post.file.split('/').pop().replace('.md', ''),
+  title: post.frontmatter.title,
+  description: post.frontmatter.description
+}));
+
+// Convert searchPosts to JSON string for passing to component
+const searchPostsJson = JSON.stringify(searchPosts);
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title || 'Vibe'}</title>
+    {description && <meta name="description" content={description} />}
+    <link rel="alternate" type="application/rss+xml" href="/rss.xml" title="Vibe Blog" />
+  </head>
+  <body>
+    <header>
+      <nav>
+        <a href="/" class="logo">VIBE</a>
+        <div class="nav-links">
+          <a href="/">Home</a>
+          <a href="/posts">Posts</a>
+        </div>
+        <div class="search">
+          <Search client:load />
+        </div>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer>
+      <p>&copy; {new Date().getFullYear()} Vibe. All rights reserved.</p>
+    </footer>
+    <!-- Copy code functionality -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = 'copy-notification';
+        notification.textContent = 'Copied!';
+        document.body.appendChild(notification);
+        
+        // Add click event listeners to code blocks
+        const codeBlocks = document.querySelectorAll('pre.astro-code');
+        codeBlocks.forEach(block => {
+          block.style.cursor = 'pointer';
+          block.addEventListener('click', function() {
+            const code = this.querySelector('code').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+              // Show notification
+              notification.classList.add('show');
+              setTimeout(() => {
+                notification.classList.remove('show');
+              }, 2000);
+            });
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
