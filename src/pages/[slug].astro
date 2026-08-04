@@ -1,27 +1,41 @@
 ---
+import { Image } from 'astro:assets';
+import { render } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
+import { getAllPosts, toPostSummary, type Post } from '../lib/posts';
 
 export async function getStaticPaths() {
-  const posts = await Astro.glob('../content/*.md');
+  const posts = await getAllPosts();
   return posts.map(post => ({
-    params: { slug: post.file.split('/').pop().replace('.md', '') },
+    params: { slug: post.slug },
+    props: { post }
   }));
 }
 
-const { slug } = Astro.params;
-const posts = await Astro.glob('../content/*.md');
-const post = posts.find(p => p.file.split('/').pop().replace('.md', '') === slug);
-
-if (!post) {
-  return Astro.redirect('/404');
+interface Props {
+  post: Post;
 }
 
-const { title, description, date } = post.frontmatter;
+const { post } = Astro.props;
+const { Content } = await render(post);
+const { title, description, lang, cover, coverAlt } = post.data;
+const { date } = toPostSummary(post);
 ---
 
-<Layout title={`${title} - Vibe`} description={description}>
+<Layout title={`${title} - Vibe`} description={description} lang={lang}>
   <article class="post-content">
     <p class="date">{date}</p>
-    <post.Content />
+    {cover && <Image class="post-cover" src={cover} alt={coverAlt ?? title} />}
+    <Content />
   </article>
 </Layout>
+
+<style>
+  .post-cover {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-bottom: 2.5rem;
+    border: 2px solid var(--border-color);
+  }
+</style>

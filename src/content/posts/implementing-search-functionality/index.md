@@ -1,6 +1,8 @@
 ---
 title: "Implementing Search Functionality in Vibe Blog"
+slug: "implementing-search-functionality"
 date: "2026-03-12"
+lang: "en"
 description: "A step-by-step guide to implementing search functionality in an Astro-based blog"
 ---
 

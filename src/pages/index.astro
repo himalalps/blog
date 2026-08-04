@@ -1,22 +1,24 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { getPostSummaries } from '../lib/posts';
+import { withBase } from '../lib/site';
 
-const posts = await Astro.glob('../content/*.md');
+const posts = await getPostSummaries();
 ---
 
-<Layout title="Vibe - Technical Blog" description="A fast, clean, and opinionated technical blog">
+<Layout title="Vibe - 技术博客" description="一个快速、简洁且专注内容的技术博客">
   <section class="hero">
     <h1>VIBE</h1>
-    <p>Technical blog with minimalist design and snappy performance</p>
+    <p>简洁、快速，专注于技术内容</p>
   </section>
   <section class="recent-posts">
-    <h2>Recent Posts</h2>
+    <h2>最新文章</h2>
     <div class="posts-grid">
       {posts.map((post) => (
-        <a href={`${import.meta.env.BASE_URL}/${post.file.split('/').pop().replace('.md', '')}`} class="post-card">
-          <h3>{post.frontmatter.title}</h3>
-          <p>{post.frontmatter.description}</p>
-          <p class="date">{post.frontmatter.date}</p>
+        <a href={withBase(post.slug)} class="post-card">
+          <h3>{post.title}</h3>
+          <p>{post.description}</p>
+          <p class="date">{post.date}</p>
         </a>
       ))}
     </div>

@@ -1,26 +1,21 @@
 import rss from '@astrojs/rss';
+import { getPostSummaries } from '../lib/posts';
+import { getSiteUrl } from '../lib/site';
 
-// In Astro RSS files, we need to use a different approach
 export async function GET(context) {
-  const posts = import.meta.glob('../content/*.md');
-
-  const postEntries = await Promise.all(
-    Object.entries(posts).map(async ([path, resolver]) => {
-      const { frontmatter } = await resolver();
-      return {
-        title: frontmatter.title,
-        description: frontmatter.description,
-        pubDate: new Date(frontmatter.date),
-        link: `${import.meta.env.BASE_URL}/${path.split('/').pop().replace('.md', '')}`,
-      };
-    })
-  );
+  const posts = await getPostSummaries();
+  const siteUrl = getSiteUrl(context.site);
 
   return rss({
-    title: 'Vibe Blog',
-    description: 'A fast, clean, and opinionated technical blog',
-    site: context.site,
-    items: postEntries,
-    customData: `<language>en-us</language>`,
+    title: 'Vibe 博客',
+    description: '一个快速、简洁且专注内容的技术博客',
+    site: siteUrl,
+    items: posts.map(post => ({
+      title: post.title,
+      description: post.description,
+      pubDate: new Date(`${post.date}T00:00:00Z`),
+      link: new URL(`${post.slug}/`, siteUrl).toString()
+    })),
+    customData: `<language>zh-cn</language>`,
   });
 }

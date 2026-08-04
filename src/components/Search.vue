@@ -1,36 +1,44 @@
 <template>
   <div class="search-container">
     <input
-      type="text"
+      type="search"
       v-model="searchQuery"
-      placeholder="Search blogs..."
+      placeholder="搜索文章..."
+      aria-label="搜索博客文章"
+      autocomplete="off"
       class="search-input"
+      @focus="showResults = Boolean(searchQuery)"
+      @keydown.esc="showResults = false"
       @keyup.enter="handleEnter"
     />
-    <div v-if="showResults" class="search-results">
+    <div v-if="showResults && searchQuery" class="search-results">
       <a
         v-for="post in searchResults"
         :key="post.slug"
-        :href="`/${post.slug}`"
+        :href="postHref(post.slug)"
         class="search-result-item"
       >
         <h3>{{ post.title }}</h3>
         <p>{{ post.description }}</p>
       </a>
       <div v-if="searchResults.length === 0 && searchQuery" class="no-results">
-        No results found for "{{ searchQuery }}"
+        没有找到与“{{ searchQuery }}”相关的文章
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
   posts: {
     type: Array,
     default: () => []
+  },
+  baseUrl: {
+    type: String,
+    default: ''
   }
 });
 
@@ -49,9 +57,12 @@ const searchResults = computed(() => {
   });
 });
 
+const postHref = (slug) => `${props.baseUrl}/${slug}`;
+
 const handleEnter = () => {
-  if (searchQuery.value) {
-    window.location.href = `/blog/search?q=${encodeURIComponent(searchQuery.value)}`;
+  const query = searchQuery.value.trim();
+  if (query) {
+    window.location.href = `${props.baseUrl}/search?q=${encodeURIComponent(query)}`;
   }
 };
 
@@ -60,14 +71,14 @@ watch(searchQuery, () => {
   showResults.value = true;
 });
 
-// Hide results when clicking outside
-onMounted(() => {
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-container')) {
-      showResults.value = false;
-    }
-  });
-});
+const handleDocumentClick = (event) => {
+  if (!event.target.closest('.search-container')) {
+    showResults.value = false;
+  }
+};
+
+onMounted(() => document.addEventListener('click', handleDocumentClick));
+onBeforeUnmount(() => document.removeEventListener('click', handleDocumentClick));
 </script>
 
 <style scoped>
@@ -80,7 +91,7 @@ onMounted(() => {
 .search-input {
   width: 100%;
   padding: 0.75rem;
-  font-family: 'Courier New', Courier, monospace;
+  font-family: var(--font-body);
   border: 2px solid var(--border-color);
   background-color: var(--bg-color);
   color: var(--text-color);

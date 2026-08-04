@@ -1,6 +1,8 @@
 ---
 title: "Getting Started with Astro-2"
+slug: "test-post"
 date: "2026-01-02"
+lang: "en"
 description: "S beginner'side to Astro framework"
 ---
 

@@ -1,6 +1,8 @@
 ---
 title: "Getting Started with Astro"
+slug: "first-post"
 date: "2026-01-01"
+lang: "en"
 description: "A beginner's guide to Astro framework"
 ---
 
