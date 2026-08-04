@@ -96,6 +96,7 @@ onBeforeUnmount(() => document.removeEventListener('click', handleDocumentClick)
   background-color: var(--bg-color);
   color: var(--text-color);
   font-size: 1rem;
+  margin-bottom: 0;
 }
 
 .search-results {

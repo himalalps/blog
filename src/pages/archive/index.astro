@@ -1,0 +1,78 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getPostSummaries } from '../../lib/posts';
+import { withBase } from '../../lib/site';
+
+const posts = await getPostSummaries();
+---
+
+<Layout title="文章归档 - Vibe" description="按时间浏览所有博客文章">
+  <section class="archive-page" aria-labelledby="archive-title">
+    <h1 id="archive-title">文章归档</h1>
+    <ul class="archive-list">
+      {posts.map((post) => (
+        <li class="archive-item">
+          <a href={withBase(post.slug)}>
+            <span class="archive-title">{post.title}</span>
+            <time class="archive-date" datetime={post.date}>{post.date}</time>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+</Layout>
+
+<style>
+  .archive-page {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .archive-page h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+
+  .archive-list {
+    margin-top: 2rem;
+    list-style: none;
+    border-top: 2px solid var(--border-color);
+  }
+
+  .archive-item {
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .archive-item a {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    align-items: baseline;
+    gap: 2rem;
+    padding: 1.1rem 0.25rem;
+  }
+
+  .archive-item a:hover .archive-title {
+    color: var(--accent-color);
+  }
+
+  .archive-title {
+    min-width: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.5;
+    transition: color 0.2s;
+  }
+
+  .archive-date {
+    font-family: var(--font-mono);
+    font-size: 0.875rem;
+    white-space: nowrap;
+    opacity: 0.65;
+  }
+
+  @media (max-width: 480px) {
+    .archive-item a {
+      gap: 1rem;
+    }
+  }
+</style>

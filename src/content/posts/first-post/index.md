@@ -68,3 +68,13 @@ print(greet("World"))
 Astro is a powerful framework for building modern static websites. With its performance benefits and developer-friendly features, it's quickly becoming a popular choice for web developers.
 
 Stay tuned for more posts about Astro and other web technologies!
+
+## 数学公式
+
+行内公式： $E=mc^2$
+
+块级公式：
+$$
+\int_{a}^{b} x^2 \, dx = \frac{b^3 - a^3}{3}
+$$
+

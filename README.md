@@ -76,6 +76,20 @@ coverAlt: "Description of the cover image"
 
 Use `lang: "zh-CN"` for Chinese posts and `lang: "en"` for English posts. Slugs may contain Unicode letters, including Chinese characters, as well as numbers and hyphens; Latin slugs remain the most portable choice.
 
+## Math Formulas
+
+Inline and display formulas are rendered with KaTeX during the production build. Use dollar delimiters in Markdown:
+
+```markdown
+Inline formula: $E = mc^2$.
+
+$$
+\int_{-\infty}^{\infty} e^{-x^2} \, dx = \sqrt{\pi}
+$$
+```
+
+The generated pages include both visual HTML and MathML. No client-side math runtime is required.
+
 Posts are automatically included in the home page, search, `posts.json`, and RSS feed, sorted newest first. No search index needs to be maintained manually.
 
 ## Deployment

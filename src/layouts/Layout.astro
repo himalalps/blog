@@ -2,10 +2,13 @@
 import Search from '../components/Search.vue';
 import { getPostSummaries } from '../lib/posts';
 import { basePath, withBase } from '../lib/site';
+import 'katex/dist/katex.min.css';
 import '../styles/global.css';
 
 const { title, description, lang = 'zh-CN' } = Astro.props;
 const searchPosts = await getPostSummaries();
+const archivePath = withBase('archive');
+const isArchivePage = Astro.url.pathname.replace(/\/$/, '') === archivePath;
 
 ---
 
@@ -14,6 +17,21 @@ const searchPosts = await getPostSummaries();
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script is:inline>
+      (() => {
+        const themeKey = 'vibe-theme';
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+        try {
+          const savedTheme = window.localStorage.getItem(themeKey);
+          document.documentElement.dataset.theme = savedTheme === 'dark' || savedTheme === 'light'
+            ? savedTheme
+            : systemTheme;
+        } catch {
+          document.documentElement.dataset.theme = systemTheme;
+        }
+      })();
+    </script>
     <title>{title || 'Vibe'}</title>
     {description && <meta name="description" content={description} />}
     <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
@@ -25,6 +43,26 @@ const searchPosts = await getPostSummaries();
         <a href={withBase()} class="logo">VIBE</a>
         <div class="search">
           <Search posts={searchPosts} baseUrl={basePath} client:load />
+        </div>
+        <div class="header-tools">
+          <a
+            href={archivePath}
+            class="archive-link"
+            aria-current={isArchivePage ? 'page' : undefined}
+            aria-label="文章归档"
+            title="文章归档"
+          ><span class="archive-icon" aria-hidden="true">▤</span></a>
+          <button
+            id="theme-toggle"
+            class="theme-toggle"
+            type="button"
+            aria-label="切换到深色模式"
+            aria-pressed="false"
+            title="切换到深色模式"
+          >
+            <span class="theme-icon theme-icon-dark" aria-hidden="true">☾</span>
+            <span class="theme-icon theme-icon-light" aria-hidden="true">☀</span>
+          </button>
         </div>
       </nav>
     </header>
@@ -93,6 +131,41 @@ const searchPosts = await getPostSummaries();
           });
         });
       });
+    </script>
+    <script>
+      const themeKey = 'vibe-theme';
+      const themeToggle = document.querySelector('#theme-toggle');
+
+      const syncThemeToggle = () => {
+        if (!(themeToggle instanceof HTMLButtonElement)) return;
+
+        const isDark = document.documentElement.dataset.theme === 'dark';
+        const label = isDark ? '切换到浅色模式' : '切换到深色模式';
+        themeToggle.setAttribute('aria-label', label);
+        themeToggle.setAttribute('aria-pressed', String(isDark));
+        themeToggle.title = label;
+      };
+
+      themeToggle?.addEventListener('click', () => {
+        const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = nextTheme;
+
+        try {
+          window.localStorage.setItem(themeKey, nextTheme);
+        } catch {
+          // The selected theme still applies for the current page.
+        }
+
+        syncThemeToggle();
+      });
+
+      window.addEventListener('storage', (event) => {
+        if (event.key !== themeKey || (event.newValue !== 'dark' && event.newValue !== 'light')) return;
+        document.documentElement.dataset.theme = event.newValue;
+        syncThemeToggle();
+      });
+
+      syncThemeToggle();
     </script>
   </body>
 </html>

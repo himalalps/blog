@@ -15,7 +15,10 @@
     "@astrojs/rss": "^4.0.0",
     "@astrojs/vue": "^4.0.0",
     "astro": "^4.0.0",
-    "vue": "^3.4.0",
-    "shiki": "^1.0.0"
+    "katex": "^0.18.1",
+    "rehype-katex": "^7.0.1",
+    "remark-math": "^6.0.0",
+    "shiki": "^1.0.0",
+    "vue": "^3.4.0"
   }
 }

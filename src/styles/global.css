@@ -7,6 +7,7 @@
 
 /* Variables for dark/light theme */
 :root {
+  color-scheme: light;
   --bg-color: #ffffff;
   --text-color: #000000;
   --accent-color: #ff3e00;
@@ -16,8 +17,18 @@
   --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', 'Noto Sans Mono CJK SC', 'Sarasa Mono SC', monospace;
 }
 
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg-color: #000000;
+  --text-color: #ffffff;
+  --accent-color: #ff3e00;
+  --border-color: #ffffff;
+  --code-bg: #202020;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
+    color-scheme: dark;
     --bg-color: #000000;
     --text-color: #ffffff;
     --accent-color: #ff3e00;
@@ -129,6 +140,94 @@ nav {
   transform: translateY(-2px);
 }
 
+.header-tools {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.archive-link {
+  display: inline-flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  aspect-ratio: 1;
+  padding: 0;
+  color: var(--text-color);
+  font-weight: bold;
+  border: 2px solid var(--border-color);
+  box-shadow: 3px 3px 0 var(--border-color);
+  background-color: var(--bg-color);
+  transition: color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+.archive-link:hover,
+.archive-link[aria-current='page'] {
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+  box-shadow: 5px 5px 0 var(--accent-color);
+  transform: translateY(-2px);
+}
+
+.archive-link:focus-visible {
+  outline: 3px solid var(--accent-color);
+  outline-offset: 3px;
+}
+
+.archive-icon {
+  font-family: var(--font-body);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+
+.theme-toggle {
+  display: inline-grid;
+  flex: 0 0 44px;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  aspect-ratio: 1;
+  padding: 0;
+  color: var(--text-color);
+  background-color: var(--bg-color);
+  border: 2px solid var(--border-color);
+  box-shadow: 3px 3px 0 var(--border-color);
+  line-height: 1;
+  text-transform: none;
+}
+
+.theme-toggle:hover {
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+  box-shadow: 5px 5px 0 var(--accent-color);
+}
+
+.theme-toggle:focus-visible {
+  outline: 3px solid var(--accent-color);
+  outline-offset: 3px;
+}
+
+.theme-icon {
+  grid-area: 1 / 1;
+  font-family: var(--font-body);
+  font-size: 1.35rem;
+}
+
+.theme-icon-light {
+  display: none;
+}
+
+:root[data-theme='dark'] .theme-icon-dark {
+  display: none;
+}
+
+:root[data-theme='dark'] .theme-icon-light {
+  display: inline;
+}
+
 @media (max-width: 768px) {
   header {
     padding: 1rem;
@@ -167,30 +266,6 @@ footer {
   background-color: var(--bg-color);
   font-weight: bold;
   letter-spacing: 0;
-}
-
-/* Hero Section */
-.hero {
-  margin-bottom: 4rem;
-  padding-bottom: 3rem;
-  border-bottom: 2px solid var(--border-color);
-  text-align: center;
-}
-
-.hero h1 {
-  font-size: 5rem;
-  margin-bottom: 1.5rem;
-  line-height: 1.1;
-  letter-spacing: 0;
-  text-transform: uppercase;
-}
-
-.hero p {
-  font-size: 1.4rem;
-  max-width: 700px;
-  margin: 0 auto;
-  opacity: 0.8;
-  line-height: 1.6;
 }
 
 /* Posts Grid */
@@ -282,6 +357,22 @@ footer {
   margin: 2rem auto;
 }
 
+.post-content .katex {
+  font-size: 1.05em;
+}
+
+.post-content .katex-display {
+  max-width: 100%;
+  margin: 2rem 0;
+  padding: 0.5rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.post-content .katex-display > .katex {
+  min-width: max-content;
+}
+
 .post-content h2 {
   font-size: 2.5rem;
   margin-top: 3rem;
@@ -342,14 +433,6 @@ pre code {
 
   main {
     padding: 1.5rem 1rem;
-  }
-
-  .hero h1 {
-    font-size: 3rem;
-  }
-
-  .hero p {
-    font-size: 1.2rem;
   }
 
   .nav-links {
