@@ -5,8 +5,7 @@ import remarkMath from 'remark-math';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://himalalps.top',
-  base: '/blog',
+  site: 'http://blog.himalalps.top',
   integrations: [vue()],
   markdown: {
     remarkPlugins: [remarkMath],

@@ -1,6 +1,6 @@
 # Vibe Technical Blog
 
-A static technical blog built with Astro and Vue. It is published through GitHub Pages at `https://himalalps.top/blog/`.
+A static technical blog built with Astro and Vue. It is published through GitHub Pages at `http://blog.himalalps.top/`.
 
 ## Requirements
 
