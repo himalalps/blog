@@ -1,6 +1,6 @@
 ---
 title: "模型架构：1. MoE"
-description: "模型架构系列第一篇：从细粒度专家、共享专家的取舍，到 aux-loss-free 负载均衡与 sigmoid 路由，梳理当前主流 MoE 架构的设计选择。"
+description: "模型架构系列第一篇，围绕 MoE 的基本结构、SwiGLU 与细粒度专家设计，梳理共享专家、路由函数、负载均衡和专家并行等关键取舍。"
 date: "2026-08-30"
 lang: "zh-CN"
 bibliography: "ref.bib"
