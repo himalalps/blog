@@ -102,6 +102,15 @@ $$
 As shown in $\eqref{eq:energy}$, mass and energy are equivalent.
 ```
 
+Several frequently used macros are available globally:
+
+```markdown
+$\bm{x} \in \R$, $\E[X]$, $\argmax_x f(x)$, $\argmin_x f(x)$
+$\on{softmax}(x)$
+```
+
+These expand to `\boldsymbol`, `\mathbb{R}`, `\mathbb{E}`, `\operatorname*{arg\,max}`, `\operatorname*{arg\,min}`, and the built-in `\operatorname{...}` respectively. `\on{...}` is the short alias for `\operatorname{...}`.
+
 Right-clicking a formula opens MathJax's context menu, including **Show MathJax Original Source**. The source dialog supports both horizontal and vertical scrolling. In dark mode, it uses a dark code panel with light text.
 
 ## Citations and Bibliography
