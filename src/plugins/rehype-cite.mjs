@@ -97,9 +97,21 @@ export function decorateCitations(tree) {
   if (entries.size === 0) return;
 
   // 2. For each inline citation span: strip data-tooltip, append a real hover card
-  walk(tree, node => {
+  walk(tree, (node, parent) => {
     const classes = node.properties?.className;
     if (node.type !== 'element' || node.tagName !== 'span' || !Array.isArray(classes) || !classes.includes('cite-ref')) return;
+
+    // Keep the citation attached to the preceding word, so it cannot become
+    // an orphan at the start of the next line. Reuse an existing whitespace
+    // character when possible to avoid changing the visible spacing.
+    const siblingIndex = parent?.children?.indexOf(node) ?? -1;
+    if (siblingIndex > 0) {
+      const previous = parent.children[siblingIndex - 1];
+      if (previous.type === 'text') {
+        if (/\s$/.test(previous.value)) previous.value = previous.value.slice(0, -1);
+      }
+    }
+    node.children.unshift({ type: 'text', value: '\u00a0' });
 
     const blocks = [];
     const newChildren = [];

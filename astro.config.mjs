@@ -1,6 +1,6 @@
 import vue from '@astrojs/vue';
 import { defineConfig } from 'astro/config';
-import rehypeKatex from 'rehype-katex';
+import rehypeMathjaxBrowser from 'rehype-mathjax/browser';
 import remarkMath from 'remark-math';
 import remarkDirective from 'remark-directive';
 import remarkDirectiveDivs from './src/plugins/remark-directive-divs.mjs';
@@ -13,7 +13,7 @@ export default defineConfig({
   integrations: [vue()],
   markdown: {
     remarkPlugins: [remarkMath, remarkDirective, remarkDirectiveDivs],
-    rehypePlugins: [rehypeKatex, rehypeCite, rehypeHeadingAnchors],
+    rehypePlugins: [rehypeMathjaxBrowser, rehypeCite, rehypeHeadingAnchors],
     syntaxHighlight: 'shiki',
     shikiConfig: {
       theme: 'nord',

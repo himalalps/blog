@@ -37,9 +37,10 @@ src/
 │   └── posts/
 │       └── first-post/
 │           └── index.md # Post content and colocated media
-├── layouts/             # Shared Astro layout
+├── layouts/             # Shared Astro layout and site-wide scripts
 ├── lib/                 # Post and site URL helpers
 ├── pages/               # Astro routes, RSS, and JSON index
+├── plugins/             # Markdown citation and heading transforms
 └── styles/              # Global styles
 ```
 
@@ -78,7 +79,7 @@ Use `lang: "zh-CN"` for Chinese posts and `lang: "en"` for English posts. Slugs 
 
 ## Math Formulas
 
-Inline and display formulas are rendered with KaTeX during the production build. Use dollar delimiters in Markdown:
+Inline and display formulas are rendered with MathJax in the browser. Use dollar delimiters in Markdown:
 
 ```markdown
 Inline formula: $E = mc^2$.
@@ -88,7 +89,42 @@ $$
 $$
 ```
 
-The generated pages include both visual HTML and MathML. No client-side math runtime is required.
+MathJax supports equation labels and same-page references with `\label`, `\ref`, and `\eqref`.
+
+For example, label a display equation and reference it later in the same post:
+
+```markdown
+$$
+E = mc^2
+\label{eq:energy}
+$$
+
+As shown in $\eqref{eq:energy}$, mass and energy are equivalent.
+```
+
+Right-clicking a formula opens MathJax's context menu, including **Show MathJax Original Source**. The source dialog supports both horizontal and vertical scrolling. In dark mode, it uses a dark code panel with light text.
+
+## Citations and Bibliography
+
+Add a BibTeX file next to the post and reference it from the frontmatter:
+
+```yaml
+bibliography: "ref.bib"
+```
+
+Use `[@key]` or `[@key1; @key2]` in the Markdown body. Citations are rendered as linked numeric markers such as `[1]` and `[1,2]`; each marker opens a hover card and links to the corresponding bibliography entry. Citation markers stay attached to the preceding word and are not split across lines.
+
+Add the bibliography placeholder where the references should appear:
+
+```markdown
+## References
+
+[^ref]
+```
+
+If the placeholder is omitted, the bibliography is appended to the end of the post. Clicking a reference marker scrolls to its entry and highlights it; clicking elsewhere clears that highlight.
+
+MathJax is loaded at runtime from jsDelivr, so formulas require network access to that CDN when a page is opened.
 
 Posts are automatically included in the home page, search, `posts.json`, and RSS feed, sorted newest first. No search index needs to be maintained manually.
 

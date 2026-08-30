@@ -2,7 +2,6 @@
 import Search from '../components/Search.vue';
 import { getPostSummaries } from '../lib/posts';
 import { basePath, withBase } from '../lib/site';
-import 'katex/dist/katex.min.css';
 import '../styles/global.css';
 
 const { title, description, lang = 'zh-CN' } = Astro.props;
@@ -32,6 +31,16 @@ const isArchivePage = Astro.url.pathname.replace(/\/$/, '') === archivePath;
         }
       })();
     </script>
+    <script is:inline>
+      window.MathJax = {
+        tex: {
+          tags: 'ams',
+          packages: { '[+]': ['ams'] },
+        },
+        svg: { fontCache: 'global' },
+      };
+    </script>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
     <title>{title || 'Vibe'}</title>
     {description && <meta name="description" content={description} />}
     <link rel="icon" type="image/svg+xml" href={withBase('favicon.svg')} />
@@ -166,6 +175,45 @@ const isArchivePage = Astro.url.pathname.replace(/\/$/, '') === archivePath;
       });
 
       syncThemeToggle();
+    </script>
+    <script>
+      const syncCitationTarget = () => {
+        document.querySelectorAll('.references .csl-entry.is-citation-target').forEach((entry) => {
+          entry.classList.remove('is-citation-target');
+        });
+
+        if (!window.location.hash.startsWith('#bib-')) return;
+
+        let targetId = window.location.hash.slice(1);
+        try {
+          targetId = decodeURIComponent(targetId);
+        } catch {
+          // Keep the literal fragment when it is not valid URI-encoded text.
+        }
+
+        const target = document.getElementById(targetId);
+        if (target?.matches('.references .csl-entry')) {
+          target.classList.add('is-citation-target');
+        }
+      };
+
+      document.addEventListener('click', (event) => {
+        if (!window.location.hash.startsWith('#bib-')) return;
+        if (!(event.target instanceof Element)) return;
+
+        const link = event.target.closest('a[href]');
+        if (link instanceof HTMLAnchorElement && link.hash.startsWith('#bib-')) return;
+
+        window.history.replaceState(
+          window.history.state,
+          '',
+          `${window.location.pathname}${window.location.search}`,
+        );
+        syncCitationTarget();
+      });
+
+      window.addEventListener('hashchange', syncCitationTarget);
+      syncCitationTarget();
     </script>
   </body>
 </html>

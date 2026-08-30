@@ -262,10 +262,19 @@ footer {
   border-top: 2px solid var(--border-color);
   padding: 2rem;
   text-align: center;
-  margin-top: 4rem;
+  margin-top: 1.5rem;
   background-color: var(--bg-color);
   font-weight: bold;
   letter-spacing: 0;
+}
+
+/* Posts should flow directly from the final reference into the footer. */
+main:has(.post-content) {
+  padding-bottom: 0;
+}
+
+body:has(.post-content) footer {
+  margin-top: 0;
 }
 
 /* Posts Grid */
@@ -320,7 +329,6 @@ footer {
   padding: 0 0 2rem;
   color: var(--text-color);
   background-color: var(--bg-color);
-  min-height: 100vh;
   overflow-wrap: break-word;
   line-break: strict;
 }
@@ -378,8 +386,10 @@ footer {
 .post-content .cite-ref {
   /* vancouver style emits (1) — hide the parens via zero font-size,
      brackets are re-added with pseudo elements below */
+  display: inline;
   position: relative;
   font-size: 0;
+  white-space: nowrap;
   vertical-align: super;
 }
 
@@ -511,16 +521,16 @@ footer {
   text-decoration: underline solid;
 }
 
-.post-content .references .csl-entry:target {
+.post-content .references .csl-entry.is-citation-target {
   background: var(--code-bg);
   box-shadow: 0 0 0 2px var(--accent-color);
 }
 
-.post-content .katex {
+.post-content mjx-container {
   font-size: 1.05em;
 }
 
-.post-content .katex-display {
+.post-content mjx-container[display="true"] {
   max-width: 100%;
   margin: 1rem 0;
   padding: 0.5rem 0;
@@ -528,8 +538,57 @@ footer {
   overflow-y: hidden;
 }
 
-.post-content .katex-display > .katex {
-  min-width: max-content;
+.post-content mjx-container[display="true"] > svg {
+  max-width: 100%;
+}
+
+/* MathJax's context-menu/source dialog is injected outside the post tree. */
+:root[data-theme='dark'] #MathJax-MenuFrame,
+:root[data-theme='dark'] #MathJax-Menu,
+:root[data-theme='dark'] #MathJax-SourceDialog,
+:root[data-theme='dark'] .MJX-ContextMenu,
+:root[data-theme='dark'] .MJX-Source,
+:root[data-theme='dark'] mjx-menu,
+:root[data-theme='dark'] mjx-dialog,
+:root[data-theme='dark'] mjx-dialog-box,
+:root[data-theme='dark'] mjx-source,
+:root[data-theme='dark'] .CtxtMenu_Info,
+:root[data-theme='dark'] .CtxtMenu_InfoContent {
+  color: #fff;
+  background: var(--code-bg);
+}
+
+:root[data-theme='dark'] #MathJax-MenuFrame button,
+:root[data-theme='dark'] #MathJax-MenuFrame textarea,
+:root[data-theme='dark'] #MathJax-MenuFrame pre,
+:root[data-theme='dark'] #MathJax-SourceDialog button,
+:root[data-theme='dark'] #MathJax-SourceDialog textarea,
+:root[data-theme='dark'] #MathJax-SourceDialog pre,
+:root[data-theme='dark'] .MJX-Source textarea,
+:root[data-theme='dark'] .MJX-Source pre,
+:root[data-theme='dark'] mjx-dialog textarea,
+:root[data-theme='dark'] mjx-dialog pre,
+:root[data-theme='dark'] mjx-source textarea,
+:root[data-theme='dark'] mjx-source pre,
+:root[data-theme='dark'] .CtxtMenu_InfoContent pre,
+:root[data-theme='dark'] .CtxtMenu_InfoContent input {
+  color: #fff !important;
+  background-color: var(--code-bg) !important;
+}
+
+/* Keep long original-source output scrollable inside the code panel. */
+.CtxtMenu_InfoContent {
+  max-height: none !important;
+  overflow: hidden !important;
+  border: 0 !important;
+}
+
+.CtxtMenu_InfoContent pre {
+  box-sizing: border-box;
+  max-width: 100%;
+  max-height: min(60vh, 20em) !important;
+  overflow: auto !important;
+  white-space: pre;
 }
 
 .post-content h2 {
