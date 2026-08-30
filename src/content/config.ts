@@ -8,7 +8,9 @@ const posts = defineCollection({
     date: z.coerce.date(),
     lang: z.enum(['zh-CN', 'en']).default('zh-CN'),
     cover: image().optional(),
-    coverAlt: z.string().min(1).optional()
+    coverAlt: z.string().min(1).optional(),
+    bib: z.string().optional(),
+    bibliography: z.string().optional()
   })
 });
 

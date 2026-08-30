@@ -317,7 +317,7 @@ footer {
 .post-content {
   max-width: 800px;
   margin: 0 auto;
-  padding: 2rem 0;
+  padding: 0 0 2rem;
   color: var(--text-color);
   background-color: var(--bg-color);
   min-height: 100vh;
@@ -326,9 +326,9 @@ footer {
 }
 
 .post-content h1 {
-  font-size: 4rem;
-  margin-bottom: 1.5rem;
-  line-height: 1.1;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  line-height: 1.3;
   letter-spacing: 0;
   text-transform: uppercase;
   color: var(--text-color);
@@ -336,7 +336,7 @@ footer {
 
 .post-content .date {
   font-size: 1rem;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
   opacity: 0.6;
   text-transform: uppercase;
   letter-spacing: 0;
@@ -345,7 +345,7 @@ footer {
 }
 
 .post-content p {
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   font-size: 1.1rem;
   line-height: 1.7;
 }
@@ -354,7 +354,166 @@ footer {
   display: block;
   max-width: 100%;
   height: auto;
-  margin: 2rem auto;
+  margin: 1rem auto;
+}
+
+/* Blockquotes */
+.post-content blockquote {
+  margin: 1rem 0;
+  padding: 0.25rem 0 0.25rem 1.5rem;
+  border-left: 4px solid var(--accent-color);
+}
+
+.post-content blockquote p {
+  margin-bottom: 1rem;
+  font-style: italic;
+  opacity: 0.75;
+}
+
+.post-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Citations (rehype-citation) — plain superscript [n] */
+.post-content .cite-ref {
+  /* vancouver style emits (1) — hide the parens via zero font-size,
+     brackets are re-added with pseudo elements below */
+  position: relative;
+  font-size: 0;
+  vertical-align: super;
+}
+
+.post-content .cite-ref::before,
+.post-content .cite-ref::after {
+  font-size: 0.85rem;
+  color: var(--text-color);
+  opacity: 0.75;
+}
+
+.post-content .cite-ref::before {
+  content: '[';
+}
+
+.post-content .cite-ref::after {
+  content: ']';
+}
+
+.post-content .cite-ref > a {
+  position: relative;
+  font-size: 0.85rem;
+  color: var(--text-color);
+  text-decoration: none;
+}
+
+/* separator between numbers of a composite citation, e.g. the "," in [1,2] */
+.post-content .cite-sep {
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.post-content .cite-ref > a:hover {
+  color: var(--accent-color);
+  text-decoration: underline;
+}
+
+/* Hover card: real DOM element so the text is selectable/copyable.
+   ::after is an invisible bridge so the pointer can travel from the
+   badge into the card without the hover state dropping. */
+.post-content .cite-pop {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(24rem, 85vw);
+  padding: 0.65rem 0.9rem;
+  border: 2px solid var(--border-color);
+  background: var(--bg-color);
+  box-shadow: 4px 4px 0 var(--border-color);
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.55;
+  white-space: normal;
+  text-align: left;
+  color: var(--text-color);
+  user-select: text;
+  z-index: 30;
+}
+
+.post-content .cite-pop::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 0.6rem; /* hover bridge across the gap */
+}
+
+.post-content .cite-ref:hover .cite-pop,
+.post-content .cite-ref:focus-within .cite-pop {
+  display: block;
+}
+
+.post-content .cite-pop-entry {
+  display: block;
+  margin-bottom: 0.45rem;
+}
+
+.post-content .cite-pop-entry:last-child {
+  margin-bottom: 0;
+}
+
+.post-content .cite-pop-num {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.post-content .cite-pop a {
+  overflow-wrap: anywhere;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.post-content .cite-pop a:hover {
+  color: var(--accent-color);
+  text-decoration: underline solid;
+}
+
+/* Bibliography */
+.post-content .references .csl-entry {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 0.75rem;
+  opacity: 0.9;
+  scroll-margin-top: 6.5rem;
+}
+
+.post-content .references .csl-left-margin {
+  display: inline-block;
+  width: 2rem;
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.post-content .references .csl-right-inline {
+  display: inline;
+}
+
+.post-content .references a {
+  overflow-wrap: anywhere;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.post-content .references a:hover {
+  color: var(--accent-color);
+  text-decoration: underline solid;
+}
+
+.post-content .references .csl-entry:target {
+  background: var(--code-bg);
+  box-shadow: 0 0 0 2px var(--accent-color);
 }
 
 .post-content .katex {
@@ -363,7 +522,7 @@ footer {
 
 .post-content .katex-display {
   max-width: 100%;
-  margin: 2rem 0;
+  margin: 1rem 0;
   padding: 0.5rem 0;
   overflow-x: auto;
   overflow-y: hidden;
@@ -374,22 +533,123 @@ footer {
 }
 
 .post-content h2 {
-  font-size: 2.5rem;
-  margin-top: 3rem;
-  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
   border-bottom: 2px solid var(--border-color);
-  padding-bottom: 1rem;
+  padding-bottom: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0;
   color: var(--text-color);
 }
 
 .post-content h3 {
-  font-size: 1.8rem;
-  margin-top: 2.5rem;
-  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
   letter-spacing: 0;
   color: var(--text-color);
+}
+
+/* Tables — full grid by default; wrap in :::booktabs / :::hlines for variants */
+.post-content table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 2rem auto;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.post-content th,
+.post-content td {
+  border: 2px solid var(--border-color);
+  padding: 0.45rem 0.85rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.post-content thead th {
+  background: var(--code-bg);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* booktabs: academic three-line table (top rule / header rule / bottom rule) */
+.post-content .booktabs table {
+  display: table;
+  width: 100%;
+  margin: 0;
+}
+
+.post-content .booktabs th,
+.post-content .booktabs td {
+  border: none;
+  padding: 0.45rem 0.7rem;
+}
+
+.post-content .booktabs thead tr {
+  border-top: 3px solid var(--border-color);
+  border-bottom: 2px solid var(--border-color);
+}
+
+.post-content .booktabs tbody tr:last-child {
+  border-bottom: 3px solid var(--border-color);
+}
+
+/* hlines: horizontal row separators only */
+.post-content .hlines table {
+  display: table;
+  width: 100%;
+  margin: 0;
+}
+
+.post-content .hlines th,
+.post-content .hlines td {
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  padding: 0.45rem 0.7rem;
+}
+
+.post-content .hlines thead th {
+  background: transparent;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.post-content .hlines tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Heading anchor links (#) */
+.post-content :is(h2, h3, h4, h5, h6) {
+  position: relative;
+  /* land below the sticky header when jumped to via #anchor */
+  scroll-margin-top: 6.5rem;
+}
+
+.post-content .heading-anchor {
+  margin-left: 0.6rem;
+  font-size: 0.55em;
+  font-weight: 400;
+  vertical-align: middle;
+  color: var(--accent-color);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.post-content :is(h2, h3, h4, h5, h6):hover .heading-anchor,
+.post-content :is(h2, h3, h4, h5, h6):target .heading-anchor,
+.post-content .heading-anchor:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .post-content .heading-anchor {
+    opacity: 0.6;
+  }
 }
 
 /* Code Blocks */
@@ -453,15 +713,20 @@ pre code {
   }
 
   .post-content h1 {
-    font-size: 2.5rem;
+    font-size: 1.6rem;
   }
 
   .post-content h2 {
-    font-size: 2rem;
+    font-size: 1.35rem;
   }
 
   .post-content h3 {
-    font-size: 1.5rem;
+    font-size: 1.1rem;
+  }
+
+  .post-content :is(h2, h3, h4, h5, h6),
+  .post-content .references .csl-entry {
+    scroll-margin-top: 8rem;
   }
 }
 
