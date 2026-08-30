@@ -1,0 +1,112 @@
+<!DOCTYPE html><html lang="zh-CN" data-astro-cid-sckkx6r4> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script>
+      (() => {
+        const themeKey = 'vibe-theme';
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+        try {
+          const savedTheme = window.localStorage.getItem(themeKey);
+          document.documentElement.dataset.theme = savedTheme === 'dark' || savedTheme === 'light'
+            ? savedTheme
+            : systemTheme;
+        } catch {
+          document.documentElement.dataset.theme = systemTheme;
+        }
+      })();
+    </script><script>
+      window.MathJax = {
+        tex: {
+          tags: 'ams',
+          packages: { '[+]': ['ams'] },
+          macros: {
+            bm: ['\\boldsymbol{#1}', 1],
+            R: '\\mathbb{R}',
+            E: '\\mathbb{E}',
+            argmax: '\\operatorname*{arg\\,max}',
+            argmin: '\\operatorname*{arg\\,min}',
+            on: ['\\operatorname{#1}', 1],
+            dff: 'd_{\\mathrm{ff}}',
+          },
+        },
+        svg: { fontCache: 'global' },
+      };
+    </script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script><title>模型架构：1. MoE - Vibe</title><meta name="description" content="模型架构系列第一篇：从细粒度专家、共享专家的取舍，到 aux-loss-free 负载均衡与 sigmoid 路由，梳理当前主流 MoE 架构的设计选择。"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="alternate" type="application/rss+xml" href="/rss.xml" title="Vibe 博客"><style>.post-cover[data-astro-cid-yvbahnfj]{display:block;width:100%;height:auto;margin-bottom:2.5rem;border:2px solid var(--border-color)}
+</style>
+<link rel="stylesheet" href="/_astro/_slug_.CHAyOo4O.css"><script type="module">const a=()=>{if(document.querySelectorAll(".references .csl-entry.is-citation-target").forEach(o=>{o.classList.remove("is-citation-target")}),!window.location.hash.startsWith("#bib-"))return;let t=window.location.hash.slice(1);try{t=decodeURIComponent(t)}catch{}const e=document.getElementById(t);e?.matches(".references .csl-entry")&&e.classList.add("is-citation-target")};document.addEventListener("click",t=>{if(!window.location.hash.startsWith("#bib-")||!(t.target instanceof Element))return;const e=t.target.closest("a[href]");e instanceof HTMLAnchorElement&&e.hash.startsWith("#bib-")||(window.history.replaceState(window.history.state,"",`${window.location.pathname}${window.location.search}`),a())});window.addEventListener("hashchange",a);a();const i="vibe-theme",n=document.querySelector("#theme-toggle"),c=()=>{if(!(n instanceof HTMLButtonElement))return;const t=document.documentElement.dataset.theme==="dark",e=t?"切换到浅色模式":"切换到深色模式";n.setAttribute("aria-label",e),n.setAttribute("aria-pressed",String(t)),n.title=e};n?.addEventListener("click",()=>{const t=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=t;try{window.localStorage.setItem(i,t)}catch{}c()});window.addEventListener("storage",t=>{t.key!==i||t.newValue!=="dark"&&t.newValue!=="light"||(document.documentElement.dataset.theme=t.newValue,c())});c();document.addEventListener("DOMContentLoaded",function(){const t=document.createElement("div");t.className="copy-notification",t.textContent="已复制",document.body.appendChild(t),document.querySelectorAll("pre.astro-code").forEach(o=>{o.style.cursor="pointer",o.addEventListener("click",function(){const s=this.querySelector("code").textContent;navigator.clipboard.writeText(s).then(()=>{t.classList.add("show"),setTimeout(()=>{t.classList.remove("show")},2e3)})})})});
+</script></head> <body data-astro-cid-sckkx6r4> <header data-astro-cid-sckkx6r4> <nav data-astro-cid-sckkx6r4> <a href="/" class="logo" data-astro-cid-sckkx6r4>VIBE</a> <div class="search" data-astro-cid-sckkx6r4> <style>astro-island,astro-slot,astro-static-slot{display:contents}</style><script>(()=>{var e=async t=>{await(await t())()};(self.Astro||(self.Astro={})).load=e;window.dispatchEvent(new Event("astro:load"));})();;(()=>{var A=Object.defineProperty;var g=(i,o,a)=>o in i?A(i,o,{enumerable:!0,configurable:!0,writable:!0,value:a}):i[o]=a;var d=(i,o,a)=>g(i,typeof o!="symbol"?o+"":o,a);{let i={0:t=>m(t),1:t=>a(t),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(a(t)),5:t=>new Set(a(t)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(t),9:t=>new Uint16Array(t),10:t=>new Uint32Array(t),11:t=>1/0*t},o=t=>{let[l,e]=t;return l in i?i[l](e):void 0},a=t=>t.map(o),m=t=>typeof t!="object"||t===null?t:Object.fromEntries(Object.entries(t).map(([l,e])=>[l,o(e)]));class y extends HTMLElement{constructor(){super(...arguments);d(this,"Component");d(this,"hydrator");d(this,"hydrate",async()=>{var b;if(!this.hydrator||!this.isConnected)return;let e=(b=this.parentElement)==null?void 0:b.closest("astro-island[ssr]");if(e){e.addEventListener("astro:hydrate",this.hydrate,{once:!0});return}let c=this.querySelectorAll("astro-slot"),n={},h=this.querySelectorAll("template[data-astro-template]");for(let r of h){let s=r.closest(this.tagName);s!=null&&s.isSameNode(this)&&(n[r.getAttribute("data-astro-template")||"default"]=r.innerHTML,r.remove())}for(let r of c){let s=r.closest(this.tagName);s!=null&&s.isSameNode(this)&&(n[r.getAttribute("name")||"default"]=r.innerHTML)}let p;try{p=this.hasAttribute("props")?m(JSON.parse(this.getAttribute("props"))):{}}catch(r){let s=this.getAttribute("component-url")||"<unknown>",v=this.getAttribute("component-export");throw v&&(s+=` (export ${v})`),console.error(`[hydrate] Error parsing props for component ${s}`,this.getAttribute("props"),r),r}let u;await this.hydrator(this)(this.Component,p,n,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),this.dispatchEvent(new CustomEvent("astro:hydrate"))});d(this,"unmount",()=>{this.isConnected||this.dispatchEvent(new CustomEvent("astro:unmount"))})}disconnectedCallback(){document.removeEventListener("astro:after-swap",this.unmount),document.addEventListener("astro:after-swap",this.unmount,{once:!0})}connectedCallback(){if(!this.hasAttribute("await-children")||document.readyState==="interactive"||document.readyState==="complete")this.childrenConnectedCallback();else{let e=()=>{document.removeEventListener("DOMContentLoaded",e),c.disconnect(),this.childrenConnectedCallback()},c=new MutationObserver(()=>{var n;((n=this.lastChild)==null?void 0:n.nodeType)===Node.COMMENT_NODE&&this.lastChild.nodeValue==="astro:end"&&(this.lastChild.remove(),e())});c.observe(this,{childList:!0}),document.addEventListener("DOMContentLoaded",e)}}async childrenConnectedCallback(){let e=this.getAttribute("before-hydration-url");e&&await import(e),this.start()}async start(){let e=JSON.parse(this.getAttribute("opts")),c=this.getAttribute("client");if(Astro[c]===void 0){window.addEventListener(`astro:${c}`,()=>this.start(),{once:!0});return}try{await Astro[c](async()=>{let n=this.getAttribute("renderer-url"),[h,{default:p}]=await Promise.all([import(this.getAttribute("component-url")),n?import(n):()=>()=>{}]),u=this.getAttribute("component-export")||"default";if(!u.includes("."))this.Component=h[u];else{this.Component=h;for(let f of u.split("."))this.Component=this.Component[f]}return this.hydrator=p,this.hydrate},e,this)}catch(n){console.error(`[astro-island] Error hydrating ${this.getAttribute("component-url")}`,n)}}attributeChangedCallback(){this.hydrate()}}d(y,"observedAttributes",["props"]),customElements.get("astro-island")||customElements.define("astro-island",y)}})();</script><astro-island uid="Zs6Dd0" prefix="v0" component-url="/_astro/Search.BIdnNo0W.js" component-export="default" renderer-url="/_astro/client.Cje-dOff.js" props="{&quot;posts&quot;:[1,[[0,{&quot;slug&quot;:[0,&quot;moe-designs&quot;],&quot;title&quot;:[0,&quot;模型架构：1. MoE&quot;],&quot;description&quot;:[0,&quot;模型架构系列第一篇：从细粒度专家、共享专家的取舍，到 aux-loss-free 负载均衡与 sigmoid 路由，梳理当前主流 MoE 架构的设计选择。&quot;],&quot;date&quot;:[0,&quot;2026-08-30&quot;],&quot;lang&quot;:[0,&quot;zh-CN&quot;]}]]],&quot;baseUrl&quot;:[0,&quot;&quot;],&quot;data-astro-cid-sckkx6r4&quot;:[0,true]}" ssr="" client="load" opts="{&quot;name&quot;:&quot;Search&quot;,&quot;value&quot;:true}" await-children=""><div class="search-container" data-astro-cid-sckkx6r4="true" data-v-4b7212b7><input type="search" value="" placeholder="搜索文章..." aria-label="搜索博客文章" autocomplete="off" class="search-input" data-v-4b7212b7><!----></div><!--astro:end--></astro-island> </div> <div class="header-tools" data-astro-cid-sckkx6r4> <a href="/archive" class="archive-link" aria-label="文章归档" title="文章归档" data-astro-cid-sckkx6r4><span class="archive-icon" aria-hidden="true" data-astro-cid-sckkx6r4>▤</span></a> <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换到深色模式" aria-pressed="false" title="切换到深色模式" data-astro-cid-sckkx6r4> <span class="theme-icon theme-icon-dark" aria-hidden="true" data-astro-cid-sckkx6r4>☾</span> <span class="theme-icon theme-icon-light" aria-hidden="true" data-astro-cid-sckkx6r4>☀</span> </button> </div> </nav> </header> <main data-astro-cid-sckkx6r4>  <article class="post-content" data-astro-cid-yvbahnfj> <p class="date" data-astro-cid-yvbahnfj>2026-08-30</p>  <h1 id="模型架构1-moe">模型架构：1. MoE</h1>
+<blockquote>
+<p>笔者在回顾不同模型的架构时，发现前沿的主流模型很多设计有不少共通之处。接下来一系列文章（希望不鸽），尝试从不同模块角度来分别浅析不同的设计选择，算是一个梳理，也欢迎读者指出任何错漏之处。这第一篇文章，就从 MoE 开始。</p>
+</blockquote>
+<h2 id="基本结构">基本结构<a class="heading-anchor" href="#基本结构" aria-label="跳转到本节">#</a></h2>
+<p>今天的主流前沿模型，基本都采用了 MoE 架构。这可以看作把一层 block 分成并行的路径，每个路径单独包含一个原始 Transformer<span class="cite-ref" id="citation--vaswani2023attentionneed--1"> (<a href="#bib-vaswani2023attentionneed">1</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">1. </span>Vaswani A, Shazeer N, Parmar N, Uszkoreit J, Jones L, Gomez AN, et al. Attention Is All You Need. 2023. <a href="https://arxiv.org/abs/1706.03762">https://arxiv.org/abs/1706.03762</a></span></span></span> 里的 FFN 层。后者本质上只是一个两层的 MLP，对输入 \(x\in\R^{d}\)（行向量）有</p>
+\[\begin{equation}
+\bm y=\phi(\bm x \bm W_u + \bm b_1) \bm W_d + \bm b_2,
+\end{equation}\]
+<p>其中 \(\bm W_u\in\R^{d\times \dff}, \bm W_d\in\R^{\dff\times d}\)，而 \(\phi\) 是非线性激活函数，<span class="cite-ref" id="citation--vaswani2023attentionneed--2"> (<a href="#bib-vaswani2023attentionneed">1</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">1. </span>Vaswani A, Shazeer N, Parmar N, Uszkoreit J, Jones L, Gomez AN, et al. Attention Is All You Need. 2023. <a href="https://arxiv.org/abs/1706.03762">https://arxiv.org/abs/1706.03762</a></span></span></span> 里用的是 \(\on{ReLU}(x)=\max(0,x)\). 这里有一个 \(\dff\)，最初版本 \(d=512, \dff=2048\)，也就是 \(\dff=4d\).</p>
+<p>那么一个显然的问题是为啥这里需要做一个中间层上的 up/down projection，而不是直接在原本的 \(d\) 维空间里做 MLP 呢？ 一种解释<span class="cite-ref" id="citation--2025whyupdown--3"> (<a href="#bib-2025whyupdown">2</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">2. </span>pinnacle. 为什么transformer的FFN需要先升维再降维. 2025. <a href="https://www.zhihu.com/question/665731716/answer/1888209852712600269">https://www.zhihu.com/question/665731716/answer/1888209852712600269</a></span></span></span> 是为了避免由于非线性激活函数 \(\phi\) 造成的矩阵降秩，对于一个 \(d\) 维的输入，假设变换到 \(\dff\) 维，使用 ReLU 激活，那么此时降秩到低于 \(d\) 的概率是一个组合问题，仍激活的个数记为 \(K\)，则有 \(K\sim {\rm Binomial}(n,1/2)\)，那么降秩的概率为</p>
+\[\begin{equation}
+{\rm Pr}[K&#x3C;d]=\sum_{k=0}^{d-1} \binom{\dff}{k} 2^{-\dff},
+\end{equation}\]
+<p>可以验证，当 \(\dff>3d\) 时，降秩概率就已经接近 0 了，而此处取 4 是一个更适合的经验值。</p>
+<p>更现代的主流 MoE 设计里，相比原版会有一些改动：</p>
+<ol>
+<li>去除每一层的 bias，一方面 bias 内存比较密集但对于性能影响不大因而去除可以节省访存，另一方面 bias 可能引入计算稳定性问题。</li>
+<li>使用 SwiGLU 替代原始的 FFN，SwiGLU 里一方面引入了门控机制，另一方面换用了 SiLU 激活函数 \(x\sigma(x)\).</li>
+</ol>
+<p>最终得到的单个 MLP 的计算公式为：</p>
+\[\begin{equation}
+\bm y=[\operatorname{SiLU}(\bm x\bm W_g)\odot \bm x\bm W_u] \bm W_d,
+\end{equation}\]
+<p>其中 \(\bm W_g,\bm W_u\in\R^{d\times \dff},\bm W_d\in\R^{\dff\times d}\).</p>
+<p>而因为此处相比原始的 FFN 多了一个矩阵 \(\bm W_g\)，为了控制整体的 FLOPs 不变，一些模型会选择将 \(\dff\) 缩小到原来的 \(2/3\)，也就是此时的 \(\dff=8d/3\). 当然这样精确计算的结果未必是适合硬件的设计（切成 tile 有尾块），最终取的值可能是通过性能 benchmark 取得的更优点。</p>
+<h3 id="latentmoe">LatentMoE<a class="heading-anchor" href="#latentmoe" aria-label="跳转到本节">#</a></h3>
+<h2 id="稀疏计算">稀疏计算<a class="heading-anchor" href="#稀疏计算" aria-label="跳转到本节">#</a></h2>
+<p>介绍完单个 expert 的设计之后，就需要考虑如何将多个并行的 expert 组合起来。MoE 的核心是稀疏计算：每个 token 只激活一部分专家。这样可以在不增加每个 token 的计算量的情况下，增加模型的总参数量，从而提升模型的表达能力。</p>
+<p>大体上，现有的 MoE 都可以看作以下的逻辑</p>
+\[\begin{equation}
+\bm y = \bm x + \sum_{i=1}^{N_s} E_i^{(s)}(\bm x) + \sum_{i=1}^{N_r} g_{i,t} E_i^{(r)}(\bm x),
+\end{equation}\]
+<p>其中 \(N_s\) 是共享专家的数量，\(N_r\) 是路由专家的数量，\(E_i^{(s)}\) 和 \(E_i^{(r)}\) 分别是共享专家和路由专家的计算函数，\(g_{it}\) 是路由专家的激活权重。共享专家对所有 token 都是常开的，而路由专家则根据 token 的特征动态选择。有些模型没有共享专家，可以看作 \(N_s=0\)；而那些传统的 dense 模型则可以看作 \(N_r=0\).</p>
+<h2 id="负载均衡">负载均衡<a class="heading-anchor" href="#负载均衡" aria-label="跳转到本节">#</a></h2>
+<!-- 传统路由是 softmax 后取 top-k，再用 softmax 概率做加权。gpt-oss 用了一个更简单的变体 [@gptoss]：**对每个专家的 logit 独立做 sigmoid，取 top-k 后按 sigmoid 值归一化**。
+
+区别听起来微妙，实际影响不小：sigmoid 的分数天然有界、且不需要对所有专家做全局归一化，训练更稳，浅层的路由分布也更平滑。配合"路由用 FP32 计算"这类数值细节，是目前比较省心的方案。
+
+MiniMax-M1 则走得更远：干脆不用共享的 router 矩阵，而是**每个专家自己带一个打分头**（attractive router），从结构上绕开全局 softmax 的耦合。
+
+MoE 训练最大的麻烦是负载不均：router 塌缩到少数几个专家，剩下的专家学不到东西。经典解法是加辅助损失（auxiliary loss）惩罚不均衡，但它和主损失是"拉扯"关系，系数调不好会伤质量。
+
+DeepSeek-V3 把这件事做成了**免辅助损失的均衡** [@deepseekv3]：
+
+- 给每个专家的 router 分数加一个 bias 项，**bias 只参与 top-k 的选择，不参与最终的加权**，因此不会污染主损失；
+- 每个 step 结束后看各专家的实际负载，过载的专家 bias 调小、闲置的调大——一个纯工程意义上的控制回路。
+
+配合足够冗余容量，V3 直接做到了 **dropless**：不做 token dropping，每个 token 一定被目标专家处理，避免训练信号被丢弃。Qwen3、K2 等模型也都采用了这一套思路 [@qwen3; @kimik2]（部分仍保留小系数的序列级均衡 loss 作为补充）。 -->
+<h2 id="训练工程">训练工程<a class="heading-anchor" href="#训练工程" aria-label="跳转到本节">#</a></h2>
+<!-- MoE 的并行比 dense 模型复杂得多，很多架构决定其实是通信决定的：
+
+- **Node-limited routing**（DeepSeek-V3）：限制每个 token 的 8 个专家最多分布在 4 个节点上，直接控制 all-to-all 通信的扇出；
+- **EP 与 DP/TP 的混合划分**：专家分散到多卡，注意力部分按传统 DP/TP 切，路由部分做 all-to-all；
+- **Upcycling**：与其从零训练，不如从 dense 模型复制 FFN 初始化专家（Qwen3 即从 Qwen2.5 upcycle 而来 [@qwen3]），省下的算力拿去后训练；
+- **低精度**：MoE 的显存压力大，DeepSeek-V3 的 FP8 训练、gpt-oss 的 MXFP4 推理，都是围绕"专家权重太多"这个问题。 -->
+<h2 id="推理视角">推理视角<a class="heading-anchor" href="#推理视角" aria-label="跳转到本节">#</a></h2>
+<!-- 一个常见误解是"37B 激活 = 37B 显存"。实际上**所有专家的权重都要驻留显存**（或付出 offload 的延迟代价），MoE 是典型的"大显存、低算力"模型：
+
+- **Prefill** 阶段批大，专家利用率高，接近理想收益；
+- **Decode** 阶段批小、访存为主，MoE 的收益更多体现在高并发吞吐而非单请求延迟；
+- 小尺寸 MoE（Qwen3-30B-A3B [@qwen3]、gpt-oss-20b [@gptoss]）本质是用总参数换激活效率：30B 的存储、3B 的计算，适合边缘与高并发部署。 -->
+<!-- ## 一些观察
+
+- **专家没有想象中"分工明确"**。对训练好的模型做路由分析，多数专家的路由熵很高，"每个专家掌握一种知识"的图景大体不成立；倒是推理链上专家覆盖率明显上升，有工作把这称为模型的"crowd thinking"。
+- **路由冗余是特性不是 bug**。多个专家学到相近功能，换来的是对 router 噪声的鲁棒性，也解释了为什么逐个"剪专家"往往剪不动。
+- **MoE 与 dense 的边界在移动**。同等训练算力下 MoE 的质量优势有多方证据支撑，于是各家旗舰全面 MoE 化；但 dense 在小尺寸、低显存场景仍有不可替代性。
+
+MoE 的设计空间还远没有收敛：路由函数、专家粒度、均衡策略、与注意力稀疏化（如 DSA）的组合，每一项都还在快速演进。这一代模型的共识大概只有一句话——**专家要又多又小，均衡要靠控制回路而不是损失函数**。 -->
+<h2 id="参考文献">参考文献<a class="heading-anchor" href="#参考文献" aria-label="跳转到本节">#</a></h2>
+<div id="refs" class="references csl-bib-body">
+  <div class="csl-entry" id="bib-vaswani2023attentionneed">
+    <div class="csl-left-margin">1. </div><div class="csl-right-inline">Vaswani A, Shazeer N, Parmar N, Uszkoreit J, Jones L, Gomez AN, et al. Attention Is All You Need. 2023. <a href="https://arxiv.org/abs/1706.03762">https://arxiv.org/abs/1706.03762</a></div>
+  </div>
+  <div class="csl-entry" id="bib-2025whyupdown">
+    <div class="csl-left-margin">2. </div><div class="csl-right-inline">pinnacle. 为什么transformer的FFN需要先升维再降维. 2025. <a href="https://www.zhihu.com/question/665731716/answer/1888209852712600269">https://www.zhihu.com/question/665731716/answer/1888209852712600269</a></div>
+  </div>
+</div> </article>  </main> <footer data-astro-cid-sckkx6r4> <div class="footer-content" data-astro-cid-sckkx6r4> <p data-astro-cid-sckkx6r4>&copy; 2026 Vibe</p> <a href="https://github.com/himalalps/blog" class="github-link" title="GitHub 仓库" aria-label="GitHub 仓库" target="_blank" rel="noreferrer" data-astro-cid-sckkx6r4> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" data-astro-cid-sckkx6r4> <path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.74.08-.74 1.2.09 1.84 1.23 1.84 1.23 1.07 1.83 2.81 1.3 3.5.99.11-.77.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.6-2.8 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.69.83.57A12 12 0 0 0 12 .5Z" data-astro-cid-sckkx6r4></path> </svg> </a> <a href="/rss.xml" class="rss-link" title="RSS Feed" data-astro-cid-sckkx6r4> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-sckkx6r4> <path d="M4 11a9 9 0 0 1 9 9" data-astro-cid-sckkx6r4></path> <path d="M4 4a16 16 0 0 1 16 16" data-astro-cid-sckkx6r4></path> <circle cx="5" cy="19" r="1" data-astro-cid-sckkx6r4></circle> </svg> </a> </div> </footer>  <!-- Copy code functionality -->    </body> </html> 
