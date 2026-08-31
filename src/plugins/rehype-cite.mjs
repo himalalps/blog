@@ -24,13 +24,25 @@ export default function rehypeCite() {
   return async (tree, file) => {
     const fm = file.data?.astro?.frontmatter ?? {};
     const bib = fm.bibliography;
-    if (!bib) return;
-
     const mdPath = file.path || file.history?.[file.history.length - 1];
     if (!mdPath) {
       file.message('[rehype-cite] cannot resolve source file path, skipping');
       return;
     }
+
+    const citation = createArticleCitation({
+      title: fm.title,
+      author: fm.author || 'Himalalps',
+      year: new Date(fm.date).getFullYear(),
+      slug: path.basename(path.dirname(mdPath)),
+      url: fm.citationUrl,
+    });
+    if (citation && !replaceBibPlaceholder(tree, citation)) {
+      // Without [^bib], place it immediately before the references section.
+      insertBeforeReferences(tree, citation);
+    }
+
+    if (!bib) return;
 
     // rehype-citation joins `path` + `bibliography`, so pass the bib filename
     // relative to the markdown file's directory.
@@ -49,9 +61,74 @@ export default function rehypeCite() {
     const transform = typeof result === 'function' ? result : result?.[0];
     if (typeof transform === 'function') {
       await transform(tree, file);
+      ensureReferencesHeading(tree);
       decorateCitations(tree);
     }
   };
+}
+
+function ensureReferencesHeading(tree) {
+  const referencesIndex = tree.children?.findIndex(node =>
+    node.type === 'element' && node.properties?.className?.includes?.('references')) ?? -1;
+  if (referencesIndex < 0) return;
+  const previous = tree.children[referencesIndex - 1];
+  if (previous?.type === 'element' && previous.tagName === 'h2'
+    && previous.properties?.id === '参考文献') return;
+  tree.children.splice(referencesIndex, 0, {
+    type: 'element',
+    tagName: 'h2',
+    properties: { id: '参考文献' },
+    children: [{ type: 'text', value: '参考文献' }],
+  });
+}
+
+function createArticleCitation({ title, author, year, slug, url }) {
+  if (!title || !year || !slug) return null;
+  const key = `${slug.replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_|_$/g, '')}_${year}`;
+  const bibtex = `@online{${key},\n  title = {${title}},\n  author = {${author}},\n  year = {${year}},\n  url = {${url || `https://blog.himalalps.top/${slug}`}}\n}`;
+  return {
+    type: 'element',
+    tagName: 'section',
+    properties: { className: ['article-citation'] },
+    children: [
+      { type: 'element', tagName: 'h2', properties: {}, children: [{ type: 'text', value: '引用本文' }] },
+      { type: 'element', tagName: 'pre', properties: {}, children: [
+        { type: 'element', tagName: 'code', properties: {}, children: [{ type: 'text', value: bibtex }] }
+      ] }
+    ]
+  };
+}
+
+function replaceBibPlaceholder(tree, citation) {
+  let replaced = false;
+  const walk = node => {
+    if (!node.children) return;
+    for (let i = 0; i < node.children.length; i += 1) {
+      const child = node.children[i];
+      if (child.type === 'element' && child.tagName === 'p'
+        && child.children?.length === 1 && child.children[0].type === 'text'
+        && child.children[0].value.trim() === '[^bib]') {
+        node.children[i] = citation;
+        replaced = true;
+      } else {
+        walk(child);
+      }
+    }
+  };
+  walk(tree);
+  return replaced;
+}
+
+function insertBeforeReferences(tree, section) {
+  let index = tree.children?.findIndex(node =>
+    node.type === 'element' && node.tagName === 'h2'
+      && node.properties?.id === '参考文献') ?? -1;
+  if (index < 0) {
+    index = tree.children?.findIndex(node =>
+      node.type === 'element' && node.properties?.className?.includes?.('references')) ?? -1;
+  }
+  if (index >= 0) tree.children.splice(index, 0, section);
+  else tree.children.push(section);
 }
 
 /**

@@ -9,6 +9,8 @@ const posts = defineCollection({
     lang: z.enum(['zh-CN', 'en']).default('zh-CN'),
     cover: image().optional(),
     coverAlt: z.string().min(1).optional(),
+    author: z.string().min(1).optional(),
+    citationUrl: z.string().url().optional(),
     bib: z.string().optional(),
     bibliography: z.string().optional()
   })

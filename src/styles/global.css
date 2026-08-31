@@ -532,6 +532,21 @@ body:has(.post-content) footer {
   box-shadow: 0 0 0 2px var(--accent-color);
 }
 
+/* Automatically generated BibTeX record for citing the article itself. */
+.post-content .article-citation {
+  margin: 2rem 0;
+}
+
+.post-content .article-citation h2 {
+  margin-top: 0;
+}
+
+.post-content .article-citation pre {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
 .post-content mjx-container {
   font-size: 1.05em;
 }
@@ -634,6 +649,17 @@ body:has(.post-content) footer {
   padding: 0.45rem 0.85rem;
   text-align: left;
   vertical-align: top;
+}
+
+/* Respect alignment markers from GitHub-flavored Markdown tables. */
+.post-content th[align='center'],
+.post-content td[align='center'] {
+  text-align: center;
+}
+
+.post-content th[align='right'],
+.post-content td[align='right'] {
+  text-align: right;
 }
 
 .post-content thead th {

@@ -3,6 +3,7 @@ title: "模型架构：1. MoE"
 description: "模型架构系列第一篇，围绕 MoE 的基本结构、SwiGLU 与细粒度专家设计，梳理共享专家、路由函数、负载均衡和专家并行等关键取舍。"
 date: "2026-08-30"
 lang: "zh-CN"
+author: "Haoyu Tang"
 bibliography: "ref.bib"
 ---
 
@@ -70,21 +71,35 @@ Kimi K3 进一步提出 **Stable LatentMoE** [@kimiteam2026kimik3openfrontier]�
 
 ## 负载均衡
 
+前述介绍里还省略了一个关键问题，如何计算每个 routed expert 的激活权重 $g_i$. 路由器通常是先计算每个 token 对各 expert 的分数，再取 top-k，做归一化。
 
-<!-- 传统路由是 softmax 后取 top-k，再用 softmax 概率做加权。gpt-oss 用了一个更简单的变体 [@gptoss]：**对每个专家的 logit 独立做 sigmoid，取 top-k 后按 sigmoid 值归一化**。
+考虑某一个 token $x$，有
+$$
+\begin{equation}
+\bm s=\phi(\bm{x}\bm{W}_r),\quad g_i=\frac{\bm s_i}{\sum_{j\in\mathcal{T}}\bm s_j}, i\in\mathcal{T},\quad \mathcal{T}=\on{argtop}_k(\bm s+\bm b),
+\end{equation}
+$$
+其中 $\bm W_r\in\R^{d\times N_r}$ 是路由矩阵，$\phi$ 是一个激活函数，通常用的是 $\on{Sigmoid}(\cdot)$，但也有模型如 DeepSeek-V4 用的是 $\on{Sqrt}(\on{Softplus}(\cdot))$，$\bm b\in\R^{N_r}$ 是 Aux-loss-free/QB 等方法里的 bias，如果模型没有采用 Loss-free，则恒有 $\bm b=0$.
 
-区别听起来微妙，实际影响不小：sigmoid 的分数天然有界、且不需要对所有专家做全局归一化，训练更稳，浅层的路由分布也更平滑。配合"路由用 FP32 计算"这类数值细节，是目前比较省心的方案。
+若只优化语言模型损失，router 很容易塌缩到少数 expert：热门 expert 产生队列和通信热点，冷门 expert 又得不到足够梯度。因此负载均衡是在容量、路由质量和通信成本之间取折中。
 
-MiniMax-M1 则走得更远：干脆不用共享的 router 矩阵，而是**每个专家自己带一个打分头**（attractive router），从结构上绕开全局 softmax 的耦合。
+最经典的方法是 **Aux loss** [@switchtransformer]。设一个训练 batch 中 expert $i$ 被选中的 token 比例为 $F_i$，router 激活权重之和为 $P_i$，常见形式为
+$$
+\begin{equation}
+L_{\mathrm{aux}}=\alpha N\sum_{i=1}^{N}F_i P_i.
+\end{equation}
+$$
+它简单、可微，但会给主目标额外的梯度方向：$$\alpha$$ 太大损害路由质量，太小又压不住热点。
 
-MoE 训练最大的麻烦是负载不均：router 塌缩到少数几个专家，剩下的专家学不到东西。经典解法是加辅助损失（auxiliary loss）惩罚不均衡，但它和主损失是"拉扯"关系，系数调不好会伤质量。
+**Aux-loss-free** [@wang2024auxiliarylossfreeloadbalancingstrategy] 把均衡从目标函数移到路由决策中：为每个 expert 维护只影响 top-k 排序的 bias，依据近期实际负载增减
+$$
+\begin{equation}
+\bm b\leftarrow \bm b-\gamma\on{sign}(\bm F-\bm Q),
+\end{equation}
+$$
+这里 $Q$ 是目标负载比例，一般取 $[1/N_r, 1/N_r, \dots]$，$\gamma$ 是更新步长。最终权重仍使用原始 router 分数计算，因此不会把人为正则项混入 token 的训练梯度。
 
-DeepSeek-V3 把这件事做成了**免辅助损失的均衡** [@deepseekv3]：
-
-- 给每个专家的 router 分数加一个 bias 项，**bias 只参与 top-k 的选择，不参与最终的加权**，因此不会污染主损失；
-- 每个 step 结束后看各专家的实际负载，过载的专家 bias 调小、闲置的调大——一个纯工程意义上的控制回路。
-
-配合足够冗余容量，V3 直接做到了 **dropless**：不做 token dropping，每个 token 一定被目标专家处理，避免训练信号被丢弃。Qwen3、K2 等模型也都采用了这一套思路 [@qwen3; @kimik2]（部分仍保留小系数的序列级均衡 loss 作为补充）。 -->
+**Quantile balancing** [@kexuefm-11626] 则利用当前 batch 里的 router score 经验分位数，反推出一个使某个 expert 被选中的阈值/偏置。为了避免过拟合到某个 batch 里的情况，实际训练中会做 EMA. 本质上是将 Expert Choice 转化为 Bias 形式：以每个 Expert 的第 $mk/n+1$ 大元素（等价为求 $1−k/n$ 分位数）作为阈值 $\bm \beta_i=-\bm b_i$，将 Expert Choice 里每个 Expert 选 Top-$mk/n$ 重新表述为 Token Choice 的 $\bm s_i−\bm \beta_i>0$ 才激活。为了规避信息泄漏问题，该方法还将 $\bm\beta$ 的更新延迟到激活决策之后。
 
 ## 训练工程
 
@@ -111,6 +126,53 @@ DeepSeek-V3 把这件事做成了**免辅助损失的均衡** [@deepseekv3]：
 
 MoE 的设计空间还远没有收敛：路由函数、专家粒度、均衡策略、与注意力稀疏化（如 DSA）的组合，每一项都还在快速演进。这一代模型的共识大概只有一句话——**专家要又多又小，均衡要靠控制回路而不是损失函数**。 -->
 
-## 参考文献
+## 前沿模型
+
+为了统一口径，对于普通、full-width 的 SwiGLU MoE，设：
+
+* residual hidden size 为 $$d$$
+* 单个 routed expert intermediate size 为 $$m_r$$
+* 每 token 选择 $$k$$ 个 routed experts
+* 所有 shared experts 合计 intermediate size 为 $$m_s$$
+
+那么：
+
+$$
+r_{\text{route}}=\frac{k m_r}{d},
+\qquad
+r_{\text{active}}=\frac{k m_r+m_s}{d}.
+$$
+
+这里 $$r_{\text{active}}$$ 是更合理的“激活 FFN 宽度比例”。因为 shared expert 对每个 token 都会执行，不能漏掉。
+
+对于标准 SwiGLU，每个 expert 有 gate、up、down 三个矩阵，因此 FFN 的激活参数量或主要矩阵计算量近似正比于
+
+$$
+3d(km_r+m_s)=3d^2r_{\text{active}}.
+$$
+
+所以普通 MoE 中，$$r_{\text{active}}$$ 可以作为 FFN 每层计算量的直接代理，但它不是输出 tensor 的宽度；多个 expert 的输出最终仍然加权求和回 $$d$$ 维。
+
+
+| 模型               |  $d$  | $m_r$ |  $k/N_r$ | $k m_r$ | $r_{\text{route}}$ | $N_s$ | $r_{\text{active}}$ |
+| ------------------ | :---: | ----: | -------: | ------: | ------------------ | :---: | ------------------- |
+| Kimi-K3            | 7168  |  3072 | 16 / 896 |   49152 | 6.857*             |   2   | 7.714*              |
+| Qwen3.8-2.4T-A95B  | 8192  |  2048 | 10 / 512 |   20480 | 2.500              |   1   | 2.750               |
+| DeepSeek-V4-Pro    | 7168  |  3072 |  6 / 384 |   18432 | 2.571              |   1   | 3.000               |
+| GLM-5.3            | 6144  |  2048 |  8 / 256 |   16384 | 2.667              |   1   | 3.000               |
+| Hy4-preview        | 6144  |  2048 |  8 / 256 |   16384 | 2.667              |   1   | 3.000               |
+| GLM-5.3-Flash      | 4096  |  2048 |  8 / 288 |   16384 | 4.000              |   1   | 4.500               |
+| DeepSeek-V4-Flash  | 4096  |  2048 |  6 / 256 |   12288 | 3.000              |   1   | 3.500               |
+| Qwen3.8-Flash-Next | 2560  |   640 | 10 / 512 |    6400 | 2.500              |   1   | 2.750               |
+
+这里默认每个 shared expert 的 intermediate size 也等于 \(m_r\)，所以：
+
+$$
+r_{\text{route}}=\frac{k m_r}{d},
+\qquad
+r_{\text{active}}=\frac{(k+N_s)m_r}{d}.
+$$
+
+[^bib]
 
 [^ref]

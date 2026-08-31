@@ -187,9 +187,10 @@ const isArchivePage = Astro.url.pathname.replace(/\/$/, '') === archivePath;
         document.body.appendChild(notification);
         
         // Add click event listeners to code blocks
-        const codeBlocks = document.querySelectorAll('pre.astro-code');
+        const codeBlocks = document.querySelectorAll('pre.astro-code, .article-citation pre');
         codeBlocks.forEach(block => {
           block.style.cursor = 'pointer';
+          block.title = '点击复制';
           block.addEventListener('click', function() {
             const code = this.querySelector('code').textContent;
             navigator.clipboard.writeText(code).then(() => {
