@@ -101,30 +101,9 @@ $$
 
 **Quantile balancing** [@kexuefm-11626] 则利用当前 batch 里的 router score 经验分位数，反推出一个使某个 expert 被选中的阈值/偏置。为了避免过拟合到某个 batch 里的情况，实际训练中会做 EMA. 本质上是将 Expert Choice 转化为 Bias 形式：以每个 Expert 的第 $mk/n+1$ 大元素（等价为求 $1−k/n$ 分位数）作为阈值 $\bm \beta_i=-\bm b_i$，将 Expert Choice 里每个 Expert 选 Top-$mk/n$ 重新表述为 Token Choice 的 $\bm s_i−\bm \beta_i>0$ 才激活。为了规避信息泄漏问题，该方法还将 $\bm\beta$ 的更新延迟到激活决策之后。
 
-## 训练工程
-
-<!-- MoE 的并行比 dense 模型复杂得多，很多架构决定其实是通信决定的：
-
-- **Node-limited routing**（DeepSeek-V3）：限制每个 token 的 8 个专家最多分布在 4 个节点上，直接控制 all-to-all 通信的扇出；
-- **EP 与 DP/TP 的混合划分**：专家分散到多卡，注意力部分按传统 DP/TP 切，路由部分做 all-to-all；
-- **Upcycling**：与其从零训练，不如从 dense 模型复制 FFN 初始化专家（Qwen3 即从 Qwen2.5 upcycle 而来 [@qwen3]），省下的算力拿去后训练；
-- **低精度**：MoE 的显存压力大，DeepSeek-V3 的 FP8 训练、gpt-oss 的 MXFP4 推理，都是围绕"专家权重太多"这个问题。 -->
+## 专家并行
 
 ## 推理视角
-
-<!-- 一个常见误解是"37B 激活 = 37B 显存"。实际上**所有专家的权重都要驻留显存**（或付出 offload 的延迟代价），MoE 是典型的"大显存、低算力"模型：
-
-- **Prefill** 阶段批大，专家利用率高，接近理想收益；
-- **Decode** 阶段批小、访存为主，MoE 的收益更多体现在高并发吞吐而非单请求延迟；
-- 小尺寸 MoE（Qwen3-30B-A3B [@qwen3]、gpt-oss-20b [@gptoss]）本质是用总参数换激活效率：30B 的存储、3B 的计算，适合边缘与高并发部署。 -->
-
-<!-- ## 一些观察
-
-- **专家没有想象中"分工明确"**。对训练好的模型做路由分析，多数专家的路由熵很高，"每个专家掌握一种知识"的图景大体不成立；倒是推理链上专家覆盖率明显上升，有工作把这称为模型的"crowd thinking"。
-- **路由冗余是特性不是 bug**。多个专家学到相近功能，换来的是对 router 噪声的鲁棒性，也解释了为什么逐个"剪专家"往往剪不动。
-- **MoE 与 dense 的边界在移动**。同等训练算力下 MoE 的质量优势有多方证据支撑，于是各家旗舰全面 MoE 化；但 dense 在小尺寸、低显存场景仍有不可替代性。
-
-MoE 的设计空间还远没有收敛：路由函数、专家粒度、均衡策略、与注意力稀疏化（如 DSA）的组合，每一项都还在快速演进。这一代模型的共识大概只有一句话——**专家要又多又小，均衡要靠控制回路而不是损失函数**。 -->
 
 ## 前沿模型
 
@@ -132,14 +111,14 @@ MoE 的设计空间还远没有收敛：路由函数、专家粒度、均衡策�
 
 | 模型               |  $d$  | $m_r$ |  $k/N_r$ | $k m_r$ | $r_{\text{route}}$ | $N_s$ | $r_{\text{active}}$ |
 | ------------------ | :---: | ----: | -------: | ------: | ------------------ | :---: | ------------------- |
-| Kimi-K3            | 7168  |  3072 | 16 / 896 |   49152 | 6.857*             |   2   | 7.714*              |
-| Qwen3.8-2.4T-A95B  | 8192  |  2048 | 10 / 512 |   20480 | 2.500              |   1   | 2.750               |
-| DeepSeek-V4-Pro    | 7168  |  3072 |  6 / 384 |   18432 | 2.571              |   1   | 3.000               |
-| GLM-5.3            | 6144  |  2048 |  8 / 256 |   16384 | 2.667              |   1   | 3.000               |
-| Hy4-preview        | 6144  |  2048 |  8 / 256 |   16384 | 2.667              |   1   | 3.000               |
-| GLM-5.3-Flash      | 4096  |  2048 |  8 / 288 |   16384 | 4.000              |   1   | 4.500               |
-| DeepSeek-V4-Flash  | 4096  |  2048 |  6 / 256 |   12288 | 3.000              |   1   | 3.500               |
-| Qwen3.8-Flash-Next | 2560  |   640 | 10 / 512 |    6400 | 2.500              |   1   | 2.750               |
+| [Kimi-K3](https://huggingface.co/moonshotai/Kimi-K3/blob/main/config.json)            | 7168  |  3072 | 16 / 896 |   49152 | 6.857*             |   2   | 7.714*              |
+| [Qwen3.8-2.4T-A95B](https://huggingface.co/Qwen/Qwen3.8-2.4T-A95B/blob/main/config.json)  | 8192  |  2048 | 10 / 512 |   20480 | 2.500              |   1   | 2.750               |
+| [DeepSeek-V4-Pro](https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/config.json)    | 7168  |  3072 |  6 / 384 |   18432 | 2.571              |   1   | 3.000               |
+| [GLM-5.3](https://huggingface.co/zai-org/GLM-5.3/blob/main/config.json)            | 6144  |  2048 |  8 / 256 |   16384 | 2.667              |   1   | 3.000               |
+| [Hy4-preview](https://huggingface.co/tencent/Hy4-preview/blob/main/config.json)        | 6144  |  2048 |  8 / 256 |   16384 | 2.667              |   1   | 3.000               |
+| [GLM-5.3-Flash](https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/config.json)      | 4096  |  2048 |  8 / 288 |   16384 | 4.000              |   1   | 4.500               |
+| [DeepSeek-V4-Flash](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/config.json)  | 4096  |  2048 |  6 / 256 |   12288 | 3.000              |   1   | 3.500               |
+| [Qwen3.8-Flash-Next](https://huggingface.co/Qwen/Qwen3.8-Flash-Next/blob/main/config.json) | 2560  |   640 | 10 / 512 |    6400 | 2.500              |   1   | 2.750               |
 
 $$
 \begin{equation}

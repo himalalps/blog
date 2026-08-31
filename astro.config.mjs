@@ -6,6 +6,7 @@ import remarkDirective from 'remark-directive';
 import remarkDirectiveDivs from './src/plugins/remark-directive-divs.mjs';
 import rehypeCite from './src/plugins/rehype-cite.mjs';
 import rehypeHeadingAnchors from './src/plugins/rehype-heading-anchors.mjs';
+import rehypeExternalLinks from './src/plugins/rehype-external-links.mjs';
 
 // https://astro.build/config
 export default defineConfig({
@@ -13,7 +14,7 @@ export default defineConfig({
   integrations: [vue()],
   markdown: {
     remarkPlugins: [remarkMath, remarkDirective, remarkDirectiveDivs],
-    rehypePlugins: [rehypeMathjaxBrowser, rehypeCite, rehypeHeadingAnchors],
+    rehypePlugins: [rehypeMathjaxBrowser, rehypeCite, rehypeExternalLinks, rehypeHeadingAnchors],
     syntaxHighlight: 'shiki',
     shikiConfig: {
       theme: 'nord',

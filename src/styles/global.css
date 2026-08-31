@@ -371,6 +371,17 @@ body:has(.post-content) footer {
   margin: 1rem auto;
 }
 
+/* Regular article links use the same subtle treatment as bibliography links. */
+.post-content a:not(.cite-ref):not(.heading-anchor) {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.post-content a:not(.cite-ref):not(.heading-anchor):hover {
+  color: var(--accent-color);
+  text-decoration: underline solid;
+}
+
 /* Blockquotes */
 .post-content blockquote {
   margin: 1rem 0;
