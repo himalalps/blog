@@ -8,7 +8,7 @@ bibliography: "ref.bib"
 
 # 模型架构：1. MoE
 
-> 笔者在回顾不同模型的架构时，发现前沿的主流模型很多设计有不少共通之处。接下来一系列文章（希望不鸽），尝试从不同模块角度来分别浅析不同的设计选择，算是一个梳理，也欢迎读者指出任何错漏之处。这第一篇文章，就从 MoE 开始。
+> 在回顾不同模型的架构时，笔者发现前沿的主流模型很多设计有不少共通之处。接下来一系列文章，笔者尝试从不同模块角度来分别浅析不同的设计选择，算是一个梳理，也欢迎读者指出任何错漏之处。这第一篇文章，就从 MoE 开始。
 
 ## 基本结构
 
@@ -28,11 +28,7 @@ $$
 $$
 可以验证，当 $\dff>3d$ 时，降秩概率就已经接近 0 了，而此处取 4 是一个更适合的经验值。
 
-更现代的主流 MoE 设计里，相比原版会有一些改动：
-1. 去除每一层的 bias，一方面 bias 内存比较密集但对于性能影响不大因而去除可以节省访存，另一方面 bias 可能引入计算稳定性问题。
-2. 使用 SwiGLU 替代原始的 FFN，SwiGLU 里一方面引入了门控机制，另一方面换用了 SiLU 激活函数 $x\sigma(x)$.
-
-最终得到的单个 MLP 的计算公式为：
+更现代的主流 MoE 设计里，单个 MLP 的计算公式通常为：
 $$
 \begin{equation}
 \bm y=[\operatorname{SiLU}(\bm x\bm W_g)\odot \bm x\bm W_u] \bm W_d,
@@ -40,11 +36,11 @@ $$
 $$
 其中 $\bm W_g,\bm W_u\in\R^{d\times \dff},\bm W_d\in\R^{\dff\times d}$.
 
-而因为此处相比原始的 FFN 多了一个矩阵 $\bm W_g$，为了控制整体的 FLOPs 不变，一些模型会选择将 $\dff$ 缩小到原来的 $2/3$，也就是此时的 $\dff=8d/3$. 当然这样精确计算的结果未必是适合硬件的设计（切成 tile 有尾块），最终取的值可能是通过性能 benchmark 取得的更优点。
+这相比原版有一些改动：
+1. 去除每一层的 bias，一方面 bias 内存比较密集但对于性能影响不大因而去除可以节省访存，另一方面 bias 可能引入计算稳定性问题。
+2. 使用 SwiGLU 替代原始的 FFN，SwiGLU 里一方面引入了门控机制，另一方面换用了 SiLU 激活函数 $x\sigma(x)$.
 
-### LatentMoE
-
-
+而因为此处相比原始的 FFN 多了一个矩阵 $\bm W_g$，为了控制整体的 FLOPs 不变，一些模型会选择将 $\dff$ 缩小到原来的 $2/3$，也就是此时的 $\dff=8d/3$. 当然精确的 $8d/3$ 未必是适合硬件的设计（切成 tile 有尾块），最终取的值可能是通过性能 benchmark 取得的更优点。
 
 ## 稀疏计算
 
@@ -53,10 +49,24 @@ $$
 大体上，现有的 MoE 都可以看作以下的逻辑
 $$
 \begin{equation}
-\bm y = \bm x + \sum_{i=1}^{N_s} E_i^{(s)}(\bm x) + \sum_{i=1}^{N_r} g_{i,t} E_i^{(r)}(\bm x),
+\bm y = \bm x + \sum_{i=1}^{N_s} E_i^{(s)}(\bm x) + \sum_{i=1}^{N_r} g_{i} E_i^{(r)}(\bm x),
 \end{equation}
 $$
-其中 $N_s$ 是共享专家的数量，$N_r$ 是路由专家的数量，$E_i^{(s)}$ 和 $E_i^{(r)}$ 分别是共享专家和路由专家的计算函数，$g_{it}$ 是路由专家的激活权重。共享专家对所有 token 都是常开的，而路由专家则根据 token 的特征动态选择。有些模型没有共享专家，可以看作 $N_s=0$；而那些传统的 dense 模型则可以看作 $N_r=0$.
+其中 $N_s$ 是共享专家的数量，$N_r$ 是路由专家的数量，$E_i^{(s)}$ 和 $E_i^{(r)}$ 分别是共享专家和路由专家的计算函数，$g_{i}$ 是路由专家的激活权重（通常只有 Top-k 不为 0）。共享专家对所有 token 都是常开的，而路由专家则根据 token 的特征动态选择。有些模型没有共享专家，可以看作 $N_s=0$；而传统的 dense 模型则可以看作 $N_r=0$.
+
+### LatentMoE
+
+普通 MoE 的每个 expert 都直接接收完整的 hidden state，因此当 routed expert 很多时，矩阵乘法和跨卡通信都会随 $d$ 一起变大。LatentMoE 只把 routed 分支送入较窄的 latent space：
+$$
+\begin{equation}
+\bm z=\bm x\bm W^{\downarrow},\qquad
+\bm h=\sum_{i=1}^{N_r}g_iE_i^{(r)}(\bm z),\qquad
+\bm y=\bm x+\sum_{i=1}^{N_s} E_i^{(s)}(\bm x)+ \bm h\bm W^{\uparrow}.
+\end{equation}
+$$
+其中 $\bm W^{\downarrow}\in\R^{d\times\ell},\bm W^{\uparrow}\in\R^{\ell\times d}$，且通常 $\ell<d$. shared expert 仍可在完整的 $d$ 维上工作，只有 routed experts 在 $\ell$ 维内计算；代价是多了一对投影矩阵的计算。
+
+Kimi K3 进一步提出 **Stable LatentMoE** [@kimiteam2026kimik3openfrontier]：在计算 Top-k 加和 $\bm h$ 之后再用 $\on{RMSNorm}$ 控制尺度，避免稀疏路由叠加投影后造成尺度漂移。
 
 ## 负载均衡
 

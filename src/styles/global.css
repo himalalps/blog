@@ -358,6 +358,12 @@ body:has(.post-content) footer {
   line-height: 1.7;
 }
 
+/* The explanatory paragraph after the opening FFN comparison list needs a
+   little more breathing room; keep the normal paragraph rhythm elsewhere. */
+.post-content ol:first-of-type + p {
+  margin-top: 1rem;
+}
+
 .post-content img {
   display: block;
   max-width: 100%;
