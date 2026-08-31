@@ -58,6 +58,7 @@
 <li>使用 SwiGLU 替代原始的 FFN，SwiGLU 里一方面引入了门控机制，另一方面换用了 SiLU 激活函数 \(x\sigma(x)\).</li>
 </ol>
 <p>而因为此处相比原始的 FFN 多了一个矩阵 \(\bm W_g\)，为了控制整体的 FLOPs 不变，一些模型会选择将 \(\dff\) 缩小到原来的 \(2/3\)，也就是此时的 \(\dff=8d/3\). 当然精确的 \(8d/3\) 未必是适合硬件的设计（切成 tile 有尾块），最终取的值可能是通过性能 benchmark 取得的更优点。</p>
+<p>不过这也不意味着 SwiGLU 就一定是最优的选择，DeepSeek-V4 的 report 里就认为这个计算开销比较大，需要做指数/除法这些不是很适合 GPU 并行加速的运算。不过目前各家模型似乎都还是用这个设计，可能暂时也没有找到更好的替代品。一些这个基础上的修补可能是类似 Kimi-K3 那样的 tanh soft cap，控制 gate/up branch 的输出范围，避免尺度爆炸。</p>
 <h2 id="稀疏计算">稀疏计算<a class="heading-anchor" href="#稀疏计算" aria-label="跳转到本节">#</a></h2>
 <p>介绍完单个 expert 的设计之后，就需要考虑如何将多个并行的 expert 组合起来。MoE 的核心是稀疏计算：每个 token 只激活一部分专家。这样可以在不增加每个 token 的计算量的情况下，增加模型的总参数量，从而提升模型的表达能力。</p>
 <p>大体上，现有的 MoE 都可以看作以下的逻辑</p>
@@ -81,22 +82,44 @@
 \bm s=\phi(\bm{x}\bm{W}_r),\quad g_i=\frac{\bm s_i}{\sum_{j\in\mathcal{T}}\bm s_j}, i\in\mathcal{T},\quad \mathcal{T}=\on{argtop}_k(\bm s+\bm b),
 \end{equation}\]
 <p>其中 \(\bm W_r\in\R^{d\times N_r}\) 是路由矩阵，\(\phi\) 是一个激活函数，通常用的是 \(\on{Sigmoid}(\cdot)\)，但也有模型如 DeepSeek-V4 用的是 \(\on{Sqrt}(\on{Softplus}(\cdot))\)，\(\bm b\in\R^{N_r}\) 是 Aux-loss-free/QB 等方法里的 bias，如果模型没有采用 Loss-free，则恒有 \(\bm b=0\).</p>
+<p>一些文章中把这里的 \(\bm W_r\) 看作各个 expert 的一个质心，但实际目前的各家模型里面 \(\bm W_r\) 还是和实际各个 routed expert 解耦的，不过也有一些 paper<span class="cite-ref" id="citation--wu-etal-2026-union--5"> (<a href="#bib-wu-etal-2026-union">4</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">4. </span>Wu S, Lv A, Xie R, Sun S, Wang D, Yan R, et al. Union-of-Experts: Neurons in Mixture-of-Experts are Secretly Routers. Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2026; <a href="https://aclanthology.org/2026.acl-long.1675/" target="_blank" rel="noopener noreferrer">https://aclanthology.org/2026.acl-long.1675/</a></span></span></span> 在尝试对这个 router 和 expert 结合上做探索，笔者认为这方面还是很有探索空间的。</p>
 <p>若只优化语言模型损失，router 很容易塌缩到少数 expert：热门 expert 产生队列和通信热点，冷门 expert 又得不到足够梯度。因此负载均衡是在容量、路由质量和通信成本之间取折中。</p>
-<p>最经典的方法是 <strong>Aux loss</strong><span class="cite-ref" id="citation--switchtransformer--5"> (<a href="#bib-switchtransformer">4</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">4. </span>Fedus W, Zoph B, Shazeer N. Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity. Journal of Machine Learning Research. 2022; <a href="https://arxiv.org/abs/2101.03961" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2101.03961</a></span></span></span>。设一个训练 batch 中 expert \(i\) 被选中的 token 比例为 \(F_i\)，router 激活权重之和为 \(P_i\)，常见形式为</p>
+<p>最经典的方法是 <strong>Aux loss</strong><span class="cite-ref" id="citation--switchtransformer--6"> (<a href="#bib-switchtransformer">5</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">5. </span>Fedus W, Zoph B, Shazeer N. Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity. Journal of Machine Learning Research. 2022; <a href="https://arxiv.org/abs/2101.03961" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2101.03961</a></span></span></span>。设一个训练 batch 中 expert \(i\) 被选中的 token 比例为 \(F_i\)，router 激活权重之和为 \(P_i\)，常见形式为</p>
 \[\begin{equation}
 L_{\mathrm{aux}}=\alpha N\sum_{i=1}^{N}F_i P_i.
 \end{equation}\]
 <p>它简单、可微，但会给主目标额外的梯度方向：\(\alpha\) 太大损害路由质量，太小又压不住热点。</p>
-<p><strong>Aux-loss-free</strong><span class="cite-ref" id="citation--wang2024auxiliarylossfreeloadbalancingstrategy--6"> (<a href="#bib-wang2024auxiliarylossfreeloadbalancingstrategy">5</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">5. </span>Wang L, Gao H, Zhao C, Sun X, Dai D. Auxiliary-Loss-Free Load Balancing Strategy for Mixture-of-Experts. 2024. <a href="https://arxiv.org/abs/2408.15664" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2408.15664</a></span></span></span> 把均衡从目标函数移到路由决策中：为每个 expert 维护只影响 top-k 排序的 bias，依据近期实际负载增减</p>
+<p><strong>Aux-loss-free</strong><span class="cite-ref" id="citation--wang2024auxiliarylossfreeloadbalancingstrategy--7"> (<a href="#bib-wang2024auxiliarylossfreeloadbalancingstrategy">6</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">6. </span>Wang L, Gao H, Zhao C, Sun X, Dai D. Auxiliary-Loss-Free Load Balancing Strategy for Mixture-of-Experts. 2024. <a href="https://arxiv.org/abs/2408.15664" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2408.15664</a></span></span></span> 把均衡从目标函数移到路由决策中：为每个 expert 维护只影响 top-k 排序的 bias，依据近期实际负载增减</p>
 \[\begin{equation}
 \bm b\leftarrow \bm b-\gamma\on{sign}(\bm F-\bm Q),
 \end{equation}\]
 <p>这里 \(Q\) 是目标负载比例，一般取 \([1/N_r, 1/N_r, \dots]\)，\(\gamma\) 是更新步长。最终权重仍使用原始 router 分数计算，因此不会把人为正则项混入 token 的训练梯度。</p>
-<p><strong>Quantile balancing</strong><span class="cite-ref" id="citation--kexuefm-11626--7"> (<a href="#bib-kexuefm-11626">6</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">6. </span>苏剑林. MoE环游记：7、动态激活极简解. 2026. <a href="https://kexue.fm/archives/11626" target="_blank" rel="noopener noreferrer">https://kexue.fm/archives/11626</a></span></span></span> 则利用当前 batch 里的 router score 经验分位数，反推出一个使某个 expert 被选中的阈值/偏置。为了避免过拟合到某个 batch 里的情况，实际训练中会做 EMA. 本质上是将 Expert Choice 转化为 Bias 形式：以每个 Expert 的第 \(mk/n+1\) 大元素（等价为求 \(1−k/n\) 分位数）作为阈值 \(\bm \beta_i=-\bm b_i\)，将 Expert Choice 里每个 Expert 选 Top-\(mk/n\) 重新表述为 Token Choice 的 \(\bm s_i−\bm \beta_i>0\) 才激活。为了规避信息泄漏问题，该方法还将 \(\bm\beta\) 的更新延迟到激活决策之后。</p>
+<p><strong>Quantile balancing</strong><span class="cite-ref" id="citation--kexuefm-11626--8"> (<a href="#bib-kexuefm-11626">7</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">7. </span>苏剑林. MoE环游记：7、动态激活极简解. 2026. <a href="https://kexue.fm/archives/11626" target="_blank" rel="noopener noreferrer">https://kexue.fm/archives/11626</a></span></span></span> 则利用当前 batch 里的 router score 经验分位数，反推出一个使某个 expert 被选中的阈值/偏置。为了避免过拟合到某个 batch 里的情况，实际训练中会做 EMA. 本质上是将 Expert Choice 转化为 Bias 形式：以每个 Expert 的第 \(mk/n+1\) 大元素（等价为求 \(1−k/n\) 分位数）作为阈值 \(\bm \beta_i=-\bm b_i\)，将 Expert Choice 里每个 Expert 选 Top-\(mk/n\) 重新表述为 Token Choice 的 \(\bm s_i−\bm \beta_i>0\) 才激活。为了规避信息泄漏问题，该方法还将 \(\bm\beta\) 的更新延迟到激活决策之后。</p>
 <h2 id="专家并行">专家并行<a class="heading-anchor" href="#专家并行" aria-label="跳转到本节">#</a></h2>
-<h2 id="推理视角">推理视角<a class="heading-anchor" href="#推理视角" aria-label="跳转到本节">#</a></h2>
+<p>在大规模训练时，往往会使用专家并行 (Expert Parallelism, EP) 来加速 MoE 训练。但这样又会引入不同节点间的通信开销，DeepSeek-V4 里介绍了一种方式<span class="cite-ref" id="citation--deepseekai2026deepseekv4highlyefficientmilliontoken--9"> (<a href="#bib-deepseekai2026deepseekv4highlyefficientmilliontoken">8</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">8. </span>DeepSeek-AI. DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence. 2026. <a href="https://arxiv.org/abs/2606.19348" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2606.19348</a></span></span></span>，尝试将专家拆分成 waves，将通信开销隐藏在计算之后。</p>
+<p>具体来说，通信上包括 Dispatch (把计算分配到各个节点上) 和 Combine (把各节点计算结果聚合起来) 两个阶段。而计算上包括 Linear1, Act, Linear2 三个阶段。前一个 wave 中在做计算时，就可以开始下一个 wave 的通信，这样类似一个流水线一样，把通信时间隐藏在计算时间中。整体上能有 1.5~2 倍的加速。</p>
+<p>Kimi-K3 里还引入了<strong>动态冗余 Expert</strong> 方法，这是为了避免 token 在不同 expert 之间的路由天然不均匀。即使全局 token 数固定，不同 rank 最终接收到的 token 数仍可能差很多。设序列长度为 \(S\)，每个 token 选择 \(K\) 个 expert，则总 routed token-expert pair 数为 \(SK\)。如果 EP size 为 \(R\)，理想情况下每个 rank 应处理 \(S K/R\) 个 token-expert pair. 这里的结论是：对于任意 token 路由分布，总能找到一个完全均衡的分配方案，并且每个 rank 最多只需要额外放置大约 \(E/R\) 个冗余 expert.</p>
+<p>这样带来的好处也是显然的，通信开销不再受影响，而是变成了一个固定值；每个 rank 上投入计算的 shape 也是可以提前定下的，不受 token 分布影响。</p>
+<h2 id="工程设计">工程设计<a class="heading-anchor" href="#工程设计" aria-label="跳转到本节">#</a></h2>
+<p>在大规模 MoE 训练中，判断通信能否被计算完全掩盖，需要看计算吞吐 \(C\) 与通信带宽 \(B\) 之间的比例是否匹配。
+若实际计算量和通信量分别为 \(V_{\mathrm{comp}}\) 与 \(V_{\mathrm{comm}}\)。如果希望通过计算与通信重叠，将通信开销完全隐藏，那么需要满足</p>
+\[\frac{C}{B}
+\le
+\frac{V_{\mathrm{comp}}}{V_{\mathrm{comm}}}.\]
+<p>右侧本质上描述了一个 workload 自身的 computation-to-communication ratio：每传输一个 Byte 的数据，能够对应多少 FLOPs 的计算。只有硬件的计算/带宽比例不超过这个值，通信才有机会被计算完全覆盖。</p>
+<p>对于一个普通的 SwiGLU，忽略占比较小的激活函数相关计算量，有 \(V_{\mathrm{comp}} = 6dm_r\) FLOPs. 这里 \(m_r\) 是单个 expert 的 intermediate size.</p>
+<p>另一方面，EP 中 token 经过两阶段通信：Dispatch 将 hidden state 发往对应 expert，使用 FP8，需要 \(d\) Bytes；Combine 将 expert 输出传回原 GPU，使用 BF16，需要 \(2d\) Bytes. 因此总通信量约为 \(V_{\mathrm{comm}} = 3d\) Bytes.</p>
+<p>代入 DeepSeek-V4 的配置，\(m_r=3072\)，有</p>
+\[\frac{V_{\mathrm{comp}}}{V_{\mathrm{comm}}}
+=
+\frac{6dm_r}{3d}
+=
+2m_r=6144 \mathrm{FLOPs/Byte},\]
+<p>这个数字可以直接用来理解硬件应该如何配置。在这种 workload 下，每增加 1GB/s 的通信带宽，大约可以匹配 6.144TFLOP/s 的计算能力。</p>
+<p>这也意味着，网络带宽并不是越高越好。当带宽已经达到上述平衡点，使通信能够被计算完全隐藏之后，再继续增加网络带宽，并不会带来对应比例的性能提升。此时真正的瓶颈已经从通信转移到了计算侧。</p>
+<p>因此，对于面向 MoE 的硬件设计，更合理的目标是围绕具体 workload 的 computation-communication ratio 寻找平衡点。计算单元、HBM、片间互联以及封装资源应该按照这一比例协同设计。</p>
 <h2 id="前沿模型">前沿模型<a class="heading-anchor" href="#前沿模型" aria-label="跳转到本节">#</a></h2>
-<p>这里尝试统计各前沿模型的 MoE 设置，此处单个 routed/shared expert 的 intermediate size 定为 \(m_r\)，可以把实际被激活的所有 expert 的 \(m_r\) 加和当作原始的 \(\dff\)，那么就可以计算这里的 routed ratio 和 active ratio.</p>
+<p>这里尝试统计各前沿模型的 MoE 设置，此处单个 routed/shared expert 的 intermediate size 定为 \(m_r\)，可以把实际被激活的所有 expert 的 \(m_r\) 加和当作原始的 \(\dff\)，那么就可以计算对应的 routed ratio 和 active ratio.</p>
 
 
 
@@ -204,7 +227,7 @@ r_{\text{active}}=\frac{(k+N_s)m_r}{d}.
 r_{\text{eff}}=\frac{P_{\text{active}}}{3d^2}\approx \frac{3N_sdm_r+3k\ell m_r+2d\ell}{3d^2}=\frac{N_sm_r}{d}+\frac{k\ell m_r}{d^2}+\frac{2\ell}{3d},
 \end{equation}\]
 <p>上式三项分别是 shared experts, latent routed experts 以及额外的 down/up projections 的计算量占比。这里的系数 3 对应 SwiGLU 中的三个矩阵。代入 Kimi-K3 的配置 \(d=7168,\ell=3584,m_r=3072,k=16,N_s=2\)，大概可以得到 \(r_{\text{eff}}\approx 4.62\). 单独考虑 routed path，这个比例在 3.76，实际上和其他模型相比略大一些但并没有很夸张。</p>
-<p>比较让人意外的倒是 GLM-5.3-Flash，它相比 GLM-5.3 没有调整 expert 的 intermediate size，而是把 \(d\) 调小到原来的 \(2/3\)，导致最后得到的 \(r_{\text{route}}\) 以及 \(r_{\text{active}}\) 都比原本大了 \(3/2\). 笔者的理解是 GLM-5.3-Flash 因为采用了 mHC，所以自然可以把 hidden size 调小，降低其他每个部分的成本，而同时意味着把更多的容量分配给 FFN.</p>
+<p>比较例外的倒是 GLM-5.3-Flash，它相比 GLM-5.3 没有调整 expert 的 intermediate size，而是把 \(d\) 调小到原来的 \(2/3\)，导致最后得到的 \(r_{\text{route}}\) 以及 \(r_{\text{active}}\) 都比原本大了 \(3/2\). 笔者的理解是 GLM-5.3-Flash 因为采用了 mHC，所以自然可以把 hidden size 调小，降低其他每个部分的成本，而同时意味着把更多的容量分配给 FFN.</p>
 <section class="article-citation"><h2 id="引用本文">引用本文<a class="heading-anchor" href="#引用本文" aria-label="跳转到本节">#</a></h2><pre><code>@online{moe_designs_2026,
   title = {模型架构：1. MoE},
   author = {Haoyu Tang},
@@ -221,14 +244,20 @@ r_{\text{eff}}=\frac{P_{\text{active}}}{3d^2}\approx \frac{3N_sdm_r+3k\ell m_r+2
   <div class="csl-entry" id="bib-kimiteam2026kimik3openfrontier">
     <div class="csl-left-margin">3. </div><div class="csl-right-inline">Kimi Team. Kimi K3: Open Frontier Intelligence. 2026. <a href="https://arxiv.org/abs/2607.24653" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2607.24653</a></div>
   </div>
+  <div class="csl-entry" id="bib-wu-etal-2026-union">
+    <div class="csl-left-margin">4. </div><div class="csl-right-inline">Wu S, Lv A, Xie R, Sun S, Wang D, Yan R, et al. Union-of-Experts: Neurons in Mixture-of-Experts are Secretly Routers. Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers). 2026; <a href="https://aclanthology.org/2026.acl-long.1675/" target="_blank" rel="noopener noreferrer">https://aclanthology.org/2026.acl-long.1675/</a></div>
+  </div>
   <div class="csl-entry" id="bib-switchtransformer">
-    <div class="csl-left-margin">4. </div><div class="csl-right-inline">Fedus W, Zoph B, Shazeer N. Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity. Journal of Machine Learning Research. 2022; <a href="https://arxiv.org/abs/2101.03961" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2101.03961</a></div>
+    <div class="csl-left-margin">5. </div><div class="csl-right-inline">Fedus W, Zoph B, Shazeer N. Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity. Journal of Machine Learning Research. 2022; <a href="https://arxiv.org/abs/2101.03961" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2101.03961</a></div>
   </div>
   <div class="csl-entry" id="bib-wang2024auxiliarylossfreeloadbalancingstrategy">
-    <div class="csl-left-margin">5. </div><div class="csl-right-inline">Wang L, Gao H, Zhao C, Sun X, Dai D. Auxiliary-Loss-Free Load Balancing Strategy for Mixture-of-Experts. 2024. <a href="https://arxiv.org/abs/2408.15664" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2408.15664</a></div>
+    <div class="csl-left-margin">6. </div><div class="csl-right-inline">Wang L, Gao H, Zhao C, Sun X, Dai D. Auxiliary-Loss-Free Load Balancing Strategy for Mixture-of-Experts. 2024. <a href="https://arxiv.org/abs/2408.15664" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2408.15664</a></div>
   </div>
   <div class="csl-entry" id="bib-kexuefm-11626">
-    <div class="csl-left-margin">6. </div><div class="csl-right-inline">苏剑林. MoE环游记：7、动态激活极简解. 2026. <a href="https://kexue.fm/archives/11626" target="_blank" rel="noopener noreferrer">https://kexue.fm/archives/11626</a></div>
+    <div class="csl-left-margin">7. </div><div class="csl-right-inline">苏剑林. MoE环游记：7、动态激活极简解. 2026. <a href="https://kexue.fm/archives/11626" target="_blank" rel="noopener noreferrer">https://kexue.fm/archives/11626</a></div>
+  </div>
+  <div class="csl-entry" id="bib-deepseekai2026deepseekv4highlyefficientmilliontoken">
+    <div class="csl-left-margin">8. </div><div class="csl-right-inline">DeepSeek-AI. DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence. 2026. <a href="https://arxiv.org/abs/2606.19348" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2606.19348</a></div>
   </div>
 </div>
 <script type="text/javascript">(function() {
