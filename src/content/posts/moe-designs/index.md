@@ -43,6 +43,8 @@ $$
 
 而因为此处相比原始的 FFN 多了一个矩阵 $\bm W_g$，为了控制整体的 FLOPs 不变，一些模型会选择将 $\dff$ 缩小到原来的 $2/3$，也就是此时的 $\dff=8d/3$. 当然精确的 $8d/3$ 未必是适合硬件的设计（切成 tile 有尾块），最终取的值可能是通过性能 benchmark 取得的更优点。
 
+不过这也不意味着 SwiGLU 就一定是最优的选择，DeepSeek-V4 的 report 里就认为这个计算开销比较大，需要做指数/除法这些不是很适合 GPU 并行加速的运算。不过目前各家模型似乎都还是用这个设计，可能暂时也没有找到更好的替代品。一些这个基础上的修补可能是类似 Kimi-K3 那样的 tanh soft cap，控制 gate/up branch 的输出范围，避免尺度爆炸。
+
 ## 稀疏计算
 
 介绍完单个 expert 的设计之后，就需要考虑如何将多个并行的 expert 组合起来。MoE 的核心是稀疏计算：每个 token 只激活一部分专家。这样可以在不增加每个 token 的计算量的情况下，增加模型的总参数量，从而提升模型的表达能力。
@@ -81,6 +83,8 @@ $$
 $$
 其中 $\bm W_r\in\R^{d\times N_r}$ 是路由矩阵，$\phi$ 是一个激活函数，通常用的是 $\on{Sigmoid}(\cdot)$，但也有模型如 DeepSeek-V4 用的是 $\on{Sqrt}(\on{Softplus}(\cdot))$，$\bm b\in\R^{N_r}$ 是 Aux-loss-free/QB 等方法里的 bias，如果模型没有采用 Loss-free，则恒有 $\bm b=0$.
 
+一些文章中把这里的 $\bm W_r$ 看作各个 expert 的一个质心，但实际目前的各家模型里面 $\bm W_r$ 还是和实际各个 routed expert 解耦的，不过也有一些 paper[@wu-etal-2026-union] 在尝试对这个 router 和 expert 结合上做探索，笔者认为这方面还是很有探索空间的。
+
 若只优化语言模型损失，router 很容易塌缩到少数 expert：热门 expert 产生队列和通信热点，冷门 expert 又得不到足够梯度。因此负载均衡是在容量、路由质量和通信成本之间取折中。
 
 最经典的方法是 **Aux loss** [@switchtransformer]。设一个训练 batch 中 expert $i$ 被选中的 token 比例为 $F_i$，router 激活权重之和为 $P_i$，常见形式为
@@ -103,11 +107,48 @@ $$
 
 ## 专家并行
 
-## 推理视角
+在大规模训练时，往往会使用专家并行 (Expert Parallelism, EP) 来加速 MoE 训练。但这样又会引入不同节点间的通信开销，DeepSeek-V4 里介绍了一种方式[@deepseekai2026deepseekv4highlyefficientmilliontoken]，尝试将专家拆分成 waves，将通信开销隐藏在计算之后。
+
+具体来说，通信上包括 Dispatch (把计算分配到各个节点上) 和 Combine (把各节点计算结果聚合起来) 两个阶段。而计算上包括 Linear1, Act, Linear2 三个阶段。前一个 wave 中在做计算时，就可以开始下一个 wave 的通信，这样类似一个流水线一样，把通信时间隐藏在计算时间中。整体上能有 1.5~2 倍的加速。
+
+Kimi-K3 里还引入了**动态冗余 Expert** 方法，这是为了避免 token 在不同 expert 之间的路由天然不均匀。即使全局 token 数固定，不同 rank 最终接收到的 token 数仍可能差很多。设序列长度为 $S$，每个 token 选择 $K$ 个 expert，则总 routed token-expert pair 数为 $SK$。如果 EP size 为 $R$，理想情况下每个 rank 应处理 $ S K/R $ 个 token-expert pair. 这里的结论是：对于任意 token 路由分布，总能找到一个完全均衡的分配方案，并且每个 rank 最多只需要额外放置大约 $E/R$ 个冗余 expert. 
+
+这样带来的好处也是显然的，通信开销不再受影响，而是变成了一个固定值；每个 rank 上投入计算的 shape 也是可以提前定下的，不受 token 分布影响。
+
+## 工程设计
+
+在大规模 MoE 训练中，判断通信能否被计算完全掩盖，需要看计算吞吐 $C$ 与通信带宽 $B$ 之间的比例是否匹配。
+若实际计算量和通信量分别为 $V_{\mathrm{comp}}$ 与 $V_{\mathrm{comm}}$。如果希望通过计算与通信重叠，将通信开销完全隐藏，那么需要满足
+
+$$
+\frac{C}{B}
+\le
+\frac{V_{\mathrm{comp}}}{V_{\mathrm{comm}}}.
+$$
+
+右侧本质上描述了一个 workload 自身的 computation-to-communication ratio：每传输一个 Byte 的数据，能够对应多少 FLOPs 的计算。只有硬件的计算/带宽比例不超过这个值，通信才有机会被计算完全覆盖。
+
+对于一个普通的 SwiGLU，忽略占比较小的激活函数相关计算量，有 $V_{\mathrm{comp}} = 6dm_r$ FLOPs. 这里 $m_r$ 是单个 expert 的 intermediate size.
+
+另一方面，EP 中 token 经过两阶段通信：Dispatch 将 hidden state 发往对应 expert，使用 FP8，需要 $d$ Bytes；Combine 将 expert 输出传回原 GPU，使用 BF16，需要 $2d$ Bytes. 因此总通信量约为 $V_{\mathrm{comm}} = 3d$ Bytes.
+
+代入 DeepSeek-V4 的配置，$m_r=3072$，有
+$$
+\frac{V_{\mathrm{comp}}}{V_{\mathrm{comm}}}
+=
+\frac{6dm_r}{3d}
+=
+2m_r=6144 \mathrm{FLOPs/Byte},
+$$
+这个数字可以直接用来理解硬件应该如何配置。在这种 workload 下，每增加 1GB/s 的通信带宽，大约可以匹配 6.144TFLOP/s 的计算能力。
+
+这也意味着，网络带宽并不是越高越好。当带宽已经达到上述平衡点，使通信能够被计算完全隐藏之后，再继续增加网络带宽，并不会带来对应比例的性能提升。此时真正的瓶颈已经从通信转移到了计算侧。
+
+因此，对于面向 MoE 的硬件设计，更合理的目标是围绕具体 workload 的 computation-communication ratio 寻找平衡点。计算单元、HBM、片间互联以及封装资源应该按照这一比例协同设计。
 
 ## 前沿模型
 
-这里尝试统计各前沿模型的 MoE 设置，此处单个 routed/shared expert 的 intermediate size 定为 $m_r$，可以把实际被激活的所有 expert 的 $m_r$ 加和当作原始的 $\dff$，那么就可以计算这里的 routed ratio 和 active ratio.
+这里尝试统计各前沿模型的 MoE 设置，此处单个 routed/shared expert 的 intermediate size 定为 $m_r$，可以把实际被激活的所有 expert 的 $m_r$ 加和当作原始的 $\dff$，那么就可以计算对应的 routed ratio 和 active ratio.
 
 | 模型               |  $d$  | $m_r$ |  $k/N_r$ | $k m_r$ | $r_{\text{route}}$ | $N_s$ | $r_{\text{active}}$ |
 | ------------------ | :---: | ----: | -------: | ------: | ------------------ | :---: | ------------------- |
@@ -138,7 +179,7 @@ r_{\text{eff}}=\frac{P_{\text{active}}}{3d^2}\approx \frac{3N_sdm_r+3k\ell m_r+2
 $$
 上式三项分别是 shared experts, latent routed experts 以及额外的 down/up projections 的计算量占比。这里的系数 3 对应 SwiGLU 中的三个矩阵。代入 Kimi-K3 的配置 $d=7168,\ell=3584,m_r=3072,k=16,N_s=2$，大概可以得到 $r_{\text{eff}}\approx 4.62$. 单独考虑 routed path，这个比例在 3.76，实际上和其他模型相比略大一些但并没有很夸张。
 
-比较让人意外的倒是 GLM-5.3-Flash，它相比 GLM-5.3 没有调整 expert 的 intermediate size，而是把 $d$ 调小到原来的 $2/3$，导致最后得到的 $r_{\text{route}}$ 以及 $r_{\text{active}}$ 都比原本大了 $3/2$. 笔者的理解是 GLM-5.3-Flash 因为采用了 mHC，所以自然可以把 hidden size 调小，降低其他每个部分的成本，而同时意味着把更多的容量分配给 FFN.
+比较例外的倒是 GLM-5.3-Flash，它相比 GLM-5.3 没有调整 expert 的 intermediate size，而是把 $d$ 调小到原来的 $2/3$，导致最后得到的 $r_{\text{route}}$ 以及 $r_{\text{active}}$ 都比原本大了 $3/2$. 笔者的理解是 GLM-5.3-Flash 因为采用了 mHC，所以自然可以把 hidden size 调小，降低其他每个部分的成本，而同时意味着把更多的容量分配给 FFN.
 
 [^bib]
 
