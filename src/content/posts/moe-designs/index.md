@@ -128,31 +128,7 @@ MoE 的设计空间还远没有收敛：路由函数、专家粒度、均衡策�
 
 ## 前沿模型
 
-为了统一口径，对于普通、full-width 的 SwiGLU MoE，设：
-
-* residual hidden size 为 $$d$$
-* 单个 routed expert intermediate size 为 $$m_r$$
-* 每 token 选择 $$k$$ 个 routed experts
-* 所有 shared experts 合计 intermediate size 为 $$m_s$$
-
-那么：
-
-$$
-r_{\text{route}}=\frac{k m_r}{d},
-\qquad
-r_{\text{active}}=\frac{k m_r+m_s}{d}.
-$$
-
-这里 $$r_{\text{active}}$$ 是更合理的“激活 FFN 宽度比例”。因为 shared expert 对每个 token 都会执行，不能漏掉。
-
-对于标准 SwiGLU，每个 expert 有 gate、up、down 三个矩阵，因此 FFN 的激活参数量或主要矩阵计算量近似正比于
-
-$$
-3d(km_r+m_s)=3d^2r_{\text{active}}.
-$$
-
-所以普通 MoE 中，$$r_{\text{active}}$$ 可以作为 FFN 每层计算量的直接代理，但它不是输出 tensor 的宽度；多个 expert 的输出最终仍然加权求和回 $$d$$ 维。
-
+这里尝试统计各前沿模型的 MoE 设置，此处单个 routed/shared expert 的 intermediate size 定为 $m_r$，可以把实际被激活的所有 expert 的 $m_r$ 加和当作原始的 $\dff$，那么就可以计算这里的 routed ratio 和 active ratio.
 
 | 模型               |  $d$  | $m_r$ |  $k/N_r$ | $k m_r$ | $r_{\text{route}}$ | $N_s$ | $r_{\text{active}}$ |
 | ------------------ | :---: | ----: | -------: | ------: | ------------------ | :---: | ------------------- |
@@ -165,13 +141,25 @@ $$
 | DeepSeek-V4-Flash  | 4096  |  2048 |  6 / 256 |   12288 | 3.000              |   1   | 3.500               |
 | Qwen3.8-Flash-Next | 2560  |   640 | 10 / 512 |    6400 | 2.500              |   1   | 2.750               |
 
-这里默认每个 shared expert 的 intermediate size 也等于 \(m_r\)，所以：
-
 $$
+\begin{equation}
 r_{\text{route}}=\frac{k m_r}{d},
 \qquad
 r_{\text{active}}=\frac{(k+N_s)m_r}{d}.
+\end{equation}
 $$
+
+可以看到除了 Kimi-K3 和 GLM-5.3-Flash 之外，其他模型的 routed ratio 都在 2.5~3.0 之间，基本都是取的符合 8/3 附近一个比较适合硬件的值。
+
+Kimi-K3 因为采用了 Stable LatentMoE，表中的 7.714 是实际激活 intermediate width 的和原始 residual width 比例，如果从计算量角度考虑，实际比例并没有那么多，
+$$
+\begin{equation}
+r_{\text{eff}}=\frac{P_{\text{active}}}{3d^2}\approx \frac{3N_sdm_r+3k\ell m_r+2d\ell}{3d^2}=\frac{N_sm_r}{d}+\frac{k\ell m_r}{d^2}+\frac{2\ell}{3d},
+\end{equation}
+$$
+上式三项分别是 shared experts, latent routed experts 以及额外的 down/up projections 的计算量占比。这里的系数 3 对应 SwiGLU 中的三个矩阵。代入 Kimi-K3 的配置 $d=7168,\ell=3584,m_r=3072,k=16,N_s=2$，大概可以得到 $r_{\text{eff}}\approx 4.62$. 单独考虑 routed path，这个比例在 3.76，实际上和其他模型相比略大一些但并没有很夸张。
+
+比较让人意外的倒是 GLM-5.3-Flash，它相比 GLM-5.3 没有调整 expert 的 intermediate size，而是把 $d$ 调小到原来的 $2/3$，导致最后得到的 $r_{\text{route}}$ 以及 $r_{\text{active}}$ 都比原本大了 $3/2$. 笔者的理解是 GLM-5.3-Flash 因为采用了 mHC，所以自然可以把 hidden size 调小，降低其他每个部分的成本，而同时意味着把更多的容量分配给 FFN.
 
 [^bib]
 
