@@ -114,21 +114,7 @@ L_{\mathrm{aux}}=\alpha N\sum_{i=1}^{N}F_i P_i.
 
 MoE 的设计空间还远没有收敛：路由函数、专家粒度、均衡策略、与注意力稀疏化（如 DSA）的组合，每一项都还在快速演进。这一代模型的共识大概只有一句话——**专家要又多又小，均衡要靠控制回路而不是损失函数**。 -->
 <h2 id="前沿模型">前沿模型<a class="heading-anchor" href="#前沿模型" aria-label="跳转到本节">#</a></h2>
-<p>为了统一口径，对于普通、full-width 的 SwiGLU MoE，设：</p>
-<ul>
-<li>residual hidden size 为 \(d\)</li>
-<li>单个 routed expert intermediate size 为 \(m_r\)</li>
-<li>每 token 选择 \(k\) 个 routed experts</li>
-<li>所有 shared experts 合计 intermediate size 为 \(m_s\)</li>
-</ul>
-<p>那么：</p>
-\[r_{\text{route}}=\frac{k m_r}{d},
-\qquad
-r_{\text{active}}=\frac{k m_r+m_s}{d}.\]
-<p>这里 \(r_{\text{active}}\) 是更合理的“激活 FFN 宽度比例”。因为 shared expert 对每个 token 都会执行，不能漏掉。</p>
-<p>对于标准 SwiGLU，每个 expert 有 gate、up、down 三个矩阵，因此 FFN 的激活参数量或主要矩阵计算量近似正比于</p>
-\[3d(km_r+m_s)=3d^2r_{\text{active}}.\]
-<p>所以普通 MoE 中，\(r_{\text{active}}\) 可以作为 FFN 每层计算量的直接代理，但它不是输出 tensor 的宽度；多个 expert 的输出最终仍然加权求和回 \(d\) 维。</p>
+<p>这里尝试统计各前沿模型的 MoE 设置，此处单个 routed/shared expert 的 intermediate size 定为 \(m_r\)，可以把实际被激活的所有 expert 的 \(m_r\) 加和当作原始的 \(\dff\)，那么就可以计算这里的 routed ratio 和 active ratio.</p>
 
 
 
@@ -225,10 +211,18 @@ r_{\text{active}}=\frac{k m_r+m_s}{d}.\]
 
 
 <table><thead><tr><th>模型</th><th align="center">\(d\)</th><th align="right">\(m_r\)</th><th align="right">\(k/N_r\)</th><th align="right">\(k m_r\)</th><th>\(r_{\text{route}}\)</th><th align="center">\(N_s\)</th><th>\(r_{\text{active}}\)</th></tr></thead><tbody><tr><td>Kimi-K3</td><td align="center">7168</td><td align="right">3072</td><td align="right">16 / 896</td><td align="right">49152</td><td>6.857*</td><td align="center">2</td><td>7.714*</td></tr><tr><td>Qwen3.8-2.4T-A95B</td><td align="center">8192</td><td align="right">2048</td><td align="right">10 / 512</td><td align="right">20480</td><td>2.500</td><td align="center">1</td><td>2.750</td></tr><tr><td>DeepSeek-V4-Pro</td><td align="center">7168</td><td align="right">3072</td><td align="right">6 / 384</td><td align="right">18432</td><td>2.571</td><td align="center">1</td><td>3.000</td></tr><tr><td>GLM-5.3</td><td align="center">6144</td><td align="right">2048</td><td align="right">8 / 256</td><td align="right">16384</td><td>2.667</td><td align="center">1</td><td>3.000</td></tr><tr><td>Hy4-preview</td><td align="center">6144</td><td align="right">2048</td><td align="right">8 / 256</td><td align="right">16384</td><td>2.667</td><td align="center">1</td><td>3.000</td></tr><tr><td>GLM-5.3-Flash</td><td align="center">4096</td><td align="right">2048</td><td align="right">8 / 288</td><td align="right">16384</td><td>4.000</td><td align="center">1</td><td>4.500</td></tr><tr><td>DeepSeek-V4-Flash</td><td align="center">4096</td><td align="right">2048</td><td align="right">6 / 256</td><td align="right">12288</td><td>3.000</td><td align="center">1</td><td>3.500</td></tr><tr><td>Qwen3.8-Flash-Next</td><td align="center">2560</td><td align="right">640</td><td align="right">10 / 512</td><td align="right">6400</td><td>2.500</td><td align="center">1</td><td>2.750</td></tr></tbody></table>
-<p>这里默认每个 shared expert 的 intermediate size 也等于 (m_r)，所以：</p>
-\[r_{\text{route}}=\frac{k m_r}{d},
+\[\begin{equation}
+r_{\text{route}}=\frac{k m_r}{d},
 \qquad
-r_{\text{active}}=\frac{(k+N_s)m_r}{d}.\]
+r_{\text{active}}=\frac{(k+N_s)m_r}{d}.
+\end{equation}\]
+<p>可以看到除了 Kimi-K3 和 GLM-5.3-Flash 之外，其他模型的 routed ratio 都在 2.5~3.0 之间，基本都是取的符合 8/3 附近一个比较适合硬件的值。</p>
+<p>Kimi-K3 因为采用了 Stable LatentMoE，表中的 7.714 是实际激活 intermediate width 的和原始 residual width 比例，如果从计算量角度考虑，实际比例并没有那么多，</p>
+\[\begin{equation}
+r_{\text{eff}}=\frac{P_{\text{active}}}{3d^2}\approx \frac{3N_sdm_r+3k\ell m_r+2d\ell}{3d^2}=\frac{N_sm_r}{d}+\frac{k\ell m_r}{d^2}+\frac{2\ell}{3d},
+\end{equation}\]
+<p>上式三项分别是 shared experts, latent routed experts 以及额外的 down/up projections 的计算量占比。这里的系数 3 对应 SwiGLU 中的三个矩阵。代入 Kimi-K3 的配置 \(d=7168,\ell=3584,m_r=3072,k=16,N_s=2\)，大概可以得到 \(r_{\text{eff}}\approx 4.62\). 单独考虑 routed path，这个比例在 3.76，实际上和其他模型相比略大一些但并没有很夸张。</p>
+<p>比较让人意外的倒是 GLM-5.3-Flash，它相比 GLM-5.3 没有调整 expert 的 intermediate size，而是把 \(d\) 调小到原来的 \(2/3\)，导致最后得到的 \(r_{\text{route}}\) 以及 \(r_{\text{active}}\) 都比原本大了 \(3/2\). 笔者的理解是 GLM-5.3-Flash 因为采用了 mHC，所以自然可以把 hidden size 调小，降低其他每个部分的成本，而同时意味着把更多的容量分配给 FFN.</p>
 <section class="article-citation"><h2 id="引用本文">引用本文<a class="heading-anchor" href="#引用本文" aria-label="跳转到本节">#</a></h2><pre><code>@online{moe_designs_2026,
   title = {模型架构：1. MoE},
   author = {Haoyu Tang},
