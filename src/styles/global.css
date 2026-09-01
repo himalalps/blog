@@ -568,6 +568,29 @@ body:has(.post-content) footer {
   overflow-y: hidden;
 }
 
+/* A display formula immediately following a paragraph is usually the
+   continuation of that paragraph (for example, "...可以写成" followed by
+   the equation). Avoid adding a second top margin in that case. */
+.post-content .math-tight-anchor {
+  display: none;
+}
+
+.post-content .math-tight-after-anchor {
+  display: none;
+}
+
+.post-content p:has(+ .math-tight-anchor) {
+  margin-bottom: 0;
+}
+
+.post-content .math-tight-anchor + mjx-container[display="true"] {
+  margin-top: 0;
+}
+
+.post-content mjx-container[display="true"]:has(+ .math-tight-after-anchor) {
+  margin-bottom: 0;
+}
+
 .post-content mjx-container[display="true"] > svg {
   max-width: 100%;
 }
