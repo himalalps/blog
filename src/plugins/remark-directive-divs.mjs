@@ -63,6 +63,7 @@ export default function remarkDirectiveDivs() {
             typeof child.attributes?.class === 'string'
               ? child.attributes.class.split(/\s+/).filter(Boolean)
               : [];
+          if (Object.prototype.hasOwnProperty.call(child.attributes ?? {}, 'fit')) extra.push('fit');
           child.data.hProperties = {
             ...(child.data.hProperties ?? {}),
             className: [child.name, ...extra]

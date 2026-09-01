@@ -677,6 +677,17 @@ body:has(.post-content) footer {
   border-right-style: hidden;
 }
 
+/* Tables wrapped with :::table{fit} are scaled down by the layout script when needed. */
+.post-content .table.fit {
+  overflow: visible;
+}
+
+.post-content .table.fit table {
+  transform-origin: top left;
+  max-width: none;
+  overflow: visible;
+}
+
 /* Respect alignment markers from GitHub-flavored Markdown tables. */
 .post-content th[align='center'],
 .post-content td[align='center'] {

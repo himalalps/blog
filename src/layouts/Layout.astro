@@ -278,5 +278,47 @@ const isArchivePage = Astro.url.pathname.replace(/\/$/, '') === archivePath;
       window.addEventListener('hashchange', syncCitationTarget);
       syncCitationTarget();
     </script>
+    <script>
+      (() => {
+        const fitTable = (table) => {
+          const wrapper = table.parentElement;
+          if (!wrapper) return;
+
+          if (!table.dataset.fitMarginBottom) {
+            table.dataset.fitMarginBottom = getComputedStyle(table).marginBottom;
+          }
+          const baseMarginBottom = parseFloat(table.dataset.fitMarginBottom) || 0;
+
+          table.style.transform = 'none';
+          table.style.width = 'max-content';
+          table.style.marginBottom = '';
+
+          const availableWidth = wrapper.clientWidth;
+          const contentWidth = table.scrollWidth;
+          if (!availableWidth || contentWidth <= availableWidth) return;
+
+          const scale = availableWidth / contentWidth;
+          table.style.transform = `scale(${scale})`;
+          table.style.width = `${contentWidth}px`;
+          const layoutCompensation = table.offsetHeight * (1 - scale);
+          table.style.marginBottom = `${baseMarginBottom - layoutCompensation}px`;
+        };
+
+        const tables = document.querySelectorAll('.post-content .table.fit > table');
+        tables.forEach((table) => fitTable(table));
+
+        if (typeof ResizeObserver !== 'undefined') {
+          const observer = new ResizeObserver((entries) => {
+            entries.forEach(({ target }) => {
+              const table = target.querySelector(':scope > table');
+              if (table) fitTable(table);
+            });
+          });
+          tables.forEach((table) => observer.observe(table.parentElement));
+        } else {
+          window.addEventListener('resize', () => tables.forEach((table) => fitTable(table)));
+        }
+      })();
+    </script>
   </body>
 </html>
