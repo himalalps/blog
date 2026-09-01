@@ -1,1 +1,1 @@
-[{"slug":"moe-designs","title":"模型架构：1. MoE","description":"模型架构系列第一篇，围绕 MoE 的基本结构、SwiGLU 与细粒度专家设计，梳理共享专家、路由函数、负载均衡和专家并行等关键取舍。","date":"2026-08-30","lang":"zh-CN"}]
+[{"slug":"adam-to-whitening","title":"从 Adam 到在线矩阵 Whitening","description":"优化","date":"2026-09-01","lang":"zh-CN"},{"slug":"moe-designs","title":"模型架构：1. MoE","description":"模型架构系列第一篇，围绕 MoE 的基本结构、SwiGLU 与细粒度专家设计，梳理共享专家、路由函数、负载均衡和专家并行等关键取舍。","date":"2026-08-30","lang":"zh-CN"}]
