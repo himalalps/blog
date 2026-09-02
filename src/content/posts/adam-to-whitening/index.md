@@ -206,3 +206,41 @@ $$
 \bm R_b\leftarrow \bm R_b\bm A_b,
 $$
 就得到一个实际可实现的 Kronecker 版本。只需存储两个较小的矩阵，而不需要面对 $mn\times mn$ 的完整计算量。后者空间上需要 $O(m^2n^2)$，而 Kronecker 版本只需 $O(m^2+n^2)$，计算上也从 $O(m^2n^2)$ 降到 $O(m^2n+mn^2+m^3+n^3)$，显著降低了开销。
+
+## 9. KL-Root-Kron 的正式推导
+
+以上到此的推导，都是针对 [@You Jiacheng](https://x.com/YouJiacheng) 的一份报告[@you]，在 [@谢天](https://github.com/Unakar) 的理解基础上，补充而来的。
+
+下面回到原报告的逻辑。报告并非从 inverse-root matrix function 出发，而是先在 Gaussian-KL 目标上定义 KL-Root-Kron，再利用 SPD manifold 上的 affine-invariant metric 推出相应的在线更新。具体来说，报告首先定义
+$$
+\mathcal{J}(\bm P)=D_{\mathrm{KL}}\left(\mathcal N(0,\bm H)\Vert\mathcal N(0,\bm P^{-2})\right),
+$$
+将 Gaussian-KL 展开，可以得到
+$$
+\mathcal{J}(\bm P)=\frac12\operatorname{tr}(\bm P^2\bm H)-\log\det \bm P+\text{const}.
+$$
+
+另一方面，利用 KL 散度对可逆线性变换的不变性，$\mathcal{J}(\bm P)$ 也可以写成
+$$
+\mathcal{J}(\bm P)=D_{\mathrm{KL}}\left(\mathcal N(0,\bm P\bm H\bm P)\Vert\mathcal N(0,\bm I)\right).
+$$
+因此，这个目标仍然是在形式化 $\bm P\bm H\bm P\rightarrow \bm I$.
+
+问题在于，若直接对 $\bm P$ 使用 Euclidean gradient，仍然会出现 $\bm P^{-1}$ 项，
+$$
+\nabla_{\bm P}\mathcal{J}(\bm P)=\frac12(\bm P\bm H+\bm H\bm P)-\bm P^{-1},
+$$
+解依然为 $\bm P=\bm H^{-1/2}$，依然需要求逆。接下来真正关键的一步，是在对称正定矩阵上使用 affine-invariant metric（AIRM）。在这个度量下，Riemannian gradient 是 Euclidean gradient 的 $\bm P$-共轭，即 $\bm P(\nabla_{\bm P}\mathcal{J}(\bm P))\bm P$。令当前样本对应的 $C=\bm P\bm g\bm g^\top \bm P$，便有
+$$
+\operatorname{grad}_{\rm AIRM}\mathcal{J}=\frac12\left[\bm P(C-\bm I)+(C-\bm I)\bm P\right],
+$$
+正好消去原本的 $\bm P^{-1}$ 项。接着采用 congruence update $\bm P^+=\bm A\bm P\bm A$，其中取 $\bm A=\bm I-\frac{\eta}{2}(\bm C-\bm I)$。对这个更新做一阶展开：
+$$
+\bm A\bm P\bm A=\bm P-\frac{\eta}{2}\left[(\bm C-\bm I)\bm P+\bm P(\bm C-\bm I)\right]+O(\eta^2),
+$$
+
+可见它正好匹配负的 AIRM natural-gradient direction。
+
+从严格几何推导看，$\bm A=\bm I-\frac{\eta}{2}(\bm C-\bm I)$ 是与 AIRM natural gradient 一阶匹配的 congruence update；而从 matrix-function 角度看，它又恰好是 $C^{-\eta/2}$ 在 $C\approx I$ 附近的一阶近似。
+
+[^ref]
