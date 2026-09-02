@@ -243,4 +243,18 @@ $$
 
 从严格几何推导看，$\bm A=\bm I-\frac{\eta}{2}(\bm C-\bm I)$ 是与 AIRM natural gradient 一阶匹配的 congruence update；而从 matrix-function 角度看，它又恰好是 $C^{-\eta/2}$ 在 $C\approx I$ 附近的一阶近似。
 
+## 10. 从两条路线回看 KL-Root-Kron
+
+本文尝试解释了 whitening update 的直观来源。从 Adam 的 diagonal gradient second moment 出发，预条件器是 $\bm P_{\rm Adam}=\operatorname{diag}(\mathbb E[\bm g\bm g^\top])^{-1/2}$；将它推广到完整的矩阵二阶矩，则得到 $\bm P=(\mathbb E[\bm g\bm g^\top])^{-1/2}$。
+
+接着不直接计算 inverse root，而是利用等价条件 $\bm P\bm H\bm P=\bm I$ 在线构造 $\bm C_t=(\bm P_t\bm g_t)(\bm P_t\bm g_t)^\top$，并将 $\bm C_t-\bm I$ 作为 stochastic whitening residual。从 matrix-function 的角度，希望施加类似 $\bm A\approx \bm C^{-\eta/2}$ 的相对 correction。为了避免真正计算 matrix function，采用一阶近似再通过
+$$
+\bm P=\bm R^\top \bm R,
+\qquad
+\bm R\leftarrow \bm R\bm A
+$$
+持续维护 SPD preconditioner。最后，为了让这套方法能够用于大模型中的矩阵参数，施加 Kronecker、diagonal 或 block 等结构化约束。
+
+而原报告则进一步说明，这种更新可以从 Gaussian KL 目标以及 SPD manifold 上的 affine-invariant natural gradient 严格推出，同时其 Kronecker stationary equations 与 idealized KL-Shampoo 一致。
+
 [^ref]
