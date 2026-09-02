@@ -191,35 +191,18 @@ $$
 \qquad
 \mathbb E[C_b]=I_n.
 $$
-
-可以证明，这两个 stationary equations 与 idealized KL-Shampoo 的 Kronecker covariance fixed point 等价。于是，每个 factor 都可以进行与前面相同的一阶更新：
-
+可以证明，这两方程与 idealized KL-Shampoo 的 Kronecker covariance fixed point 等价。于是，两边都可以进行与前面相同的一阶更新
 $$
-A_a
-=
-I-\frac{\eta_a}{2}(C_a-I),
+A_a=I-\frac{\eta_a}{2}(C_a-I),\quad A_b=I-\frac{\eta_b}{2}(C_b-I),
 $$
-
-$$
-A_b
-=
-I-\frac{\eta_b}{2}(C_b-I),
-$$
-
 同时维护
-
 $$
-P_a=R_a^\top R_a,
-\qquad
-P_b=R_b^\top R_b,
+P_a=R_a^\top R_a,\qquad P_b=R_b^\top R_b,
 $$
-
-并更新
-
+并做更新
 $$
 R_a\leftarrow R_aA_a,
 \qquad
-R_b\leftarrow R_bA_b.
+R_b\leftarrow R_bA_b,
 $$
-
-这就得到一个实际可实现的 Kronecker 版本：只需存储两个较小的 factor，而不需要面对 $mn\times mn$ 的 full matrix。
+就得到一个实际可实现的 Kronecker 版本。只需存储两个较小的矩阵，而不需要面对 $mn\times mn$ 的完整计算量。后者空间上需要 $O(m^2n^2)$，而 Kronecker 版本只需 $O(m^2+n^2)$，计算上也从 $O(m^2n^2)$ 降到 $O(m^2n+mn^2+m^3+n^3)$，显著降低了开销。
