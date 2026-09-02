@@ -33,107 +33,107 @@
 </style>
 <link rel="stylesheet" href="/_astro/_slug_.BoBfiSZ8.css"><script type="module">(()=>{const t=e=>{const o=e.parentElement;if(!o)return;e.dataset.fitMarginBottom||(e.dataset.fitMarginBottom=getComputedStyle(e).marginBottom);const a=parseFloat(e.dataset.fitMarginBottom)||0;e.style.transform="none",e.style.width="max-content",e.style.marginBottom="";const s=o.clientWidth,r=e.scrollWidth;if(!s||r<=s)return;const l=s/r;e.style.transform=`scale(${l})`,e.style.width=`${r}px`;const h=e.offsetHeight*(1-l);e.style.marginBottom=`${a-h}px`},n=document.querySelectorAll(".post-content .table.fit > table");if(n.forEach(e=>t(e)),typeof ResizeObserver<"u"){const e=new ResizeObserver(o=>{o.forEach(({target:a})=>{const s=a.querySelector(":scope > table");s&&t(s)})});n.forEach(o=>e.observe(o.parentElement))}else window.addEventListener("resize",()=>n.forEach(e=>t(e)))})();const c=()=>{if(document.querySelectorAll(".references .csl-entry.is-citation-target").forEach(e=>{e.classList.remove("is-citation-target")}),!window.location.hash.startsWith("#bib-"))return;let t=window.location.hash.slice(1);try{t=decodeURIComponent(t)}catch{}const n=document.getElementById(t);n?.matches(".references .csl-entry")&&n.classList.add("is-citation-target")};document.addEventListener("click",t=>{if(!window.location.hash.startsWith("#bib-")||!(t.target instanceof Element))return;const n=t.target.closest("a[href]");n instanceof HTMLAnchorElement&&n.hash.startsWith("#bib-")||(window.history.replaceState(window.history.state,"",`${window.location.pathname}${window.location.search}`),c())});window.addEventListener("hashchange",c);c();const m="vibe-theme",i=document.querySelector("#theme-toggle"),d=()=>{if(!(i instanceof HTMLButtonElement))return;const t=document.documentElement.dataset.theme==="dark",n=t?"切换到浅色模式":"切换到深色模式";i.setAttribute("aria-label",n),i.setAttribute("aria-pressed",String(t)),i.title=n};i?.addEventListener("click",()=>{const t=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=t;try{window.localStorage.setItem(m,t)}catch{}d()});window.addEventListener("storage",t=>{t.key!==m||t.newValue!=="dark"&&t.newValue!=="light"||(document.documentElement.dataset.theme=t.newValue,d())});d();document.addEventListener("DOMContentLoaded",function(){const t=document.createElement("div");t.className="copy-notification",t.textContent="已复制",document.body.appendChild(t),document.querySelectorAll("pre.astro-code, .article-citation pre").forEach(e=>{e.style.cursor="pointer",e.title="点击复制",e.addEventListener("click",function(){const o=this.querySelector("code").textContent;navigator.clipboard.writeText(o).then(()=>{t.classList.add("show"),setTimeout(()=>{t.classList.remove("show")},2e3)})})})});
 </script></head> <body data-astro-cid-sckkx6r4> <header data-astro-cid-sckkx6r4> <nav data-astro-cid-sckkx6r4> <a href="/" class="logo" data-astro-cid-sckkx6r4>VIBE</a> <div class="search" data-astro-cid-sckkx6r4> <style>astro-island,astro-slot,astro-static-slot{display:contents}</style><script>(()=>{var e=async t=>{await(await t())()};(self.Astro||(self.Astro={})).load=e;window.dispatchEvent(new Event("astro:load"));})();;(()=>{var A=Object.defineProperty;var g=(i,o,a)=>o in i?A(i,o,{enumerable:!0,configurable:!0,writable:!0,value:a}):i[o]=a;var d=(i,o,a)=>g(i,typeof o!="symbol"?o+"":o,a);{let i={0:t=>m(t),1:t=>a(t),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(a(t)),5:t=>new Set(a(t)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(t),9:t=>new Uint16Array(t),10:t=>new Uint32Array(t),11:t=>1/0*t},o=t=>{let[l,e]=t;return l in i?i[l](e):void 0},a=t=>t.map(o),m=t=>typeof t!="object"||t===null?t:Object.fromEntries(Object.entries(t).map(([l,e])=>[l,o(e)]));class y extends HTMLElement{constructor(){super(...arguments);d(this,"Component");d(this,"hydrator");d(this,"hydrate",async()=>{var b;if(!this.hydrator||!this.isConnected)return;let e=(b=this.parentElement)==null?void 0:b.closest("astro-island[ssr]");if(e){e.addEventListener("astro:hydrate",this.hydrate,{once:!0});return}let c=this.querySelectorAll("astro-slot"),n={},h=this.querySelectorAll("template[data-astro-template]");for(let r of h){let s=r.closest(this.tagName);s!=null&&s.isSameNode(this)&&(n[r.getAttribute("data-astro-template")||"default"]=r.innerHTML,r.remove())}for(let r of c){let s=r.closest(this.tagName);s!=null&&s.isSameNode(this)&&(n[r.getAttribute("name")||"default"]=r.innerHTML)}let p;try{p=this.hasAttribute("props")?m(JSON.parse(this.getAttribute("props"))):{}}catch(r){let s=this.getAttribute("component-url")||"<unknown>",v=this.getAttribute("component-export");throw v&&(s+=` (export ${v})`),console.error(`[hydrate] Error parsing props for component ${s}`,this.getAttribute("props"),r),r}let u;await this.hydrator(this)(this.Component,p,n,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),this.dispatchEvent(new CustomEvent("astro:hydrate"))});d(this,"unmount",()=>{this.isConnected||this.dispatchEvent(new CustomEvent("astro:unmount"))})}disconnectedCallback(){document.removeEventListener("astro:after-swap",this.unmount),document.addEventListener("astro:after-swap",this.unmount,{once:!0})}connectedCallback(){if(!this.hasAttribute("await-children")||document.readyState==="interactive"||document.readyState==="complete")this.childrenConnectedCallback();else{let e=()=>{document.removeEventListener("DOMContentLoaded",e),c.disconnect(),this.childrenConnectedCallback()},c=new MutationObserver(()=>{var n;((n=this.lastChild)==null?void 0:n.nodeType)===Node.COMMENT_NODE&&this.lastChild.nodeValue==="astro:end"&&(this.lastChild.remove(),e())});c.observe(this,{childList:!0}),document.addEventListener("DOMContentLoaded",e)}}async childrenConnectedCallback(){let e=this.getAttribute("before-hydration-url");e&&await import(e),this.start()}async start(){let e=JSON.parse(this.getAttribute("opts")),c=this.getAttribute("client");if(Astro[c]===void 0){window.addEventListener(`astro:${c}`,()=>this.start(),{once:!0});return}try{await Astro[c](async()=>{let n=this.getAttribute("renderer-url"),[h,{default:p}]=await Promise.all([import(this.getAttribute("component-url")),n?import(n):()=>()=>{}]),u=this.getAttribute("component-export")||"default";if(!u.includes("."))this.Component=h[u];else{this.Component=h;for(let f of u.split("."))this.Component=this.Component[f]}return this.hydrator=p,this.hydrate},e,this)}catch(n){console.error(`[astro-island] Error hydrating ${this.getAttribute("component-url")}`,n)}}attributeChangedCallback(){this.hydrate()}}d(y,"observedAttributes",["props"]),customElements.get("astro-island")||customElements.define("astro-island",y)}})();</script><astro-island uid="2t5wvl" prefix="v0" component-url="/_astro/Search.BIdnNo0W.js" component-export="default" renderer-url="/_astro/client.Cje-dOff.js" props="{&quot;posts&quot;:[1,[[0,{&quot;slug&quot;:[0,&quot;adam-to-whitening&quot;],&quot;title&quot;:[0,&quot;从 Adam 到在线矩阵 Whitening&quot;],&quot;description&quot;:[0,&quot;从 Adam 的对角二阶矩出发，理解在线矩阵 Whitening、KL-Root-Kron 及其 Kronecker 实现。&quot;],&quot;date&quot;:[0,&quot;2026-09-01&quot;],&quot;lang&quot;:[0,&quot;zh-CN&quot;]}],[0,{&quot;slug&quot;:[0,&quot;moe-designs&quot;],&quot;title&quot;:[0,&quot;模型架构：1. MoE&quot;],&quot;description&quot;:[0,&quot;模型架构系列第一篇，围绕 MoE 的基本结构、SwiGLU 与细粒度专家设计，梳理共享专家、路由函数、负载均衡和专家并行等关键取舍。&quot;],&quot;date&quot;:[0,&quot;2026-08-30&quot;],&quot;lang&quot;:[0,&quot;zh-CN&quot;]}]]],&quot;baseUrl&quot;:[0,&quot;&quot;],&quot;data-astro-cid-sckkx6r4&quot;:[0,true]}" ssr="" client="load" opts="{&quot;name&quot;:&quot;Search&quot;,&quot;value&quot;:true}" await-children=""><div class="search-container" data-astro-cid-sckkx6r4="true" data-v-4b7212b7><input type="search" value="" placeholder="搜索文章..." aria-label="搜索博客文章" autocomplete="off" class="search-input" data-v-4b7212b7><!----></div><!--astro:end--></astro-island> </div> <div class="header-tools" data-astro-cid-sckkx6r4> <a href="/archive" class="archive-link" aria-label="文章归档" title="文章归档" data-astro-cid-sckkx6r4><span class="archive-icon" aria-hidden="true" data-astro-cid-sckkx6r4>▤</span></a> <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换到深色模式" aria-pressed="false" title="切换到深色模式" data-astro-cid-sckkx6r4> <span class="theme-icon theme-icon-dark" aria-hidden="true" data-astro-cid-sckkx6r4>☾</span> <span class="theme-icon theme-icon-light" aria-hidden="true" data-astro-cid-sckkx6r4>☀</span> </button> </div> </nav> </header> <main data-astro-cid-sckkx6r4>  <article class="post-content" data-astro-cid-yvbahnfj> <p class="date" data-astro-cid-yvbahnfj>2026-09-01</p>  <h1 id="从-adam-到在线矩阵-whitening">从 Adam 到在线矩阵 Whitening</h1>
-<p>Adam 的核心操作之一，是利用梯度的二阶矩对更新做归一化。对第 \(i\) 个参数坐标，Adam 维护 \(v_{t,i}\approx \mathbb E[g_i^2]\)，计算参数更新 \(\Delta\theta_i\propto-\frac{m_i}{\sqrt{v_i}}\).</p>
-<p>如果把梯度二阶矩写成 \(H=\mathbb E[gg^\top]\)，那么 Adam 实际上只保留了 \(H\) 的对角部分</p>
+<p>Adam 的核心操作之一，是利用梯度的二阶矩对更新做归一化。对第 \(i\) 个参数坐标，Adam 维护 \(\bm v_{t,i}\approx \mathbb E[\bm g_i^2]\)，计算参数更新 \(\Delta\bm \theta_i\propto-\frac{\bm m_i}{\sqrt{\bm v_i}}\).</p>
+<p>如果把梯度二阶矩写成 \(\bm H=\mathbb E[\bm g\bm g^\top]\)，那么 Adam 实际上只保留了 \(\bm H\) 的对角部分</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[H_{\mathrm{diag}}=\operatorname{diag}\bigl(\mathbb E[g_1^2],\dots,\mathbb E[g_d^2]\bigr),\]
+\[\bm H_{\mathrm{diag}}=\operatorname{diag}\bigl(\mathbb E[\bm g_1^2],\dots,\mathbb E[\bm g_d^2]\bigr),\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>因此 Adam 的预条件器可以写成</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[P_{\mathrm{Adam}}=H_{\mathrm{diag}}^{-1/2}.\]
+\[\bm P_{\mathrm{Adam}}=\bm H_{\mathrm{diag}}^{-1/2}.\]
 <p>从这个视角出发，不免得到一个很自然的问题：</p>
 <blockquote>
 <p>如果不局限于二阶矩对角元，而是保留梯度不同方向之间的相关性，会得到什么样的优化器？</p>
 </blockquote>
 <p>不妨直接推广，</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[P=H^{-1/2},\qquad H=\mathbb E[gg^\top],\]
+\[\bm P=\bm H^{-1/2},\qquad \bm H=\mathbb E[\bm g\bm g^\top],\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
-<p>由于 \(H\) 是梯度 covariance，它天然是对称半正定矩阵。为了让通常意义下的 inverse square root 有定义，下面先假设 \(H\succ0\)；如果 \(H\) 存在退化方向，实际实现中通常对它加入一个很小的 damping，使用 \((H+\varepsilon I)^{-1/2}\)。在这个假设下，\(P\) 也是对称正定矩阵，即 \(P\succ0\).</p>
+<p>由于 \(\bm H\) 是梯度 covariance，它天然是对称半正定矩阵。为了让通常意义下的 inverse square root 有定义，下面先假设 \(\bm H\succ0\)；如果 \(\bm H\) 存在退化方向，实际实现中通常对它加入一个很小的 damping，使用 \((\bm H+\varepsilon I)^{-1/2}\)。在这个假设下，\(\bm P\) 也是对称正定矩阵，即 \(\bm P\succ0\).</p>
 <p>此时参数更新变成</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[\Delta\theta=-\eta Pm=-\eta H^{-1/2}m.\]
+\[\Delta\bm \theta=-\eta \bm P\bm m=-\eta \bm H^{-1/2}\bm m.\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
-<p>注意这里的 \(-1/2\) 次方和 Newton 法里的 \(H^{-1}\) 是两件不同的事情。Newton 的 \(H\) 是 Hessian，并通过 \(-H^{-1}g\) 求解局部二次模型；这里的 \(H\) 是梯度二阶矩，目标更接近 whitening / RMS normalization。</p>
-<h2 id="1-与其直接计算-h-12不如求解-whitening-方程">1. 与其直接计算 \(H^{-1/2}\)，不如求解 whitening 方程<a class="heading-anchor" href="#1-与其直接计算-h-12不如求解-whitening-方程" aria-label="跳转到本节">#</a></h2>
-<p>直接维护 \(P=H^{-1/2}\) 的问题很明显：矩阵 inverse square root 很贵。但 \(P=H^{-1/2}\) 有一个等价条件 \(PHP=I\). 通过这个转化</p>
+<p>注意这里的 \(-1/2\) 次方和 Newton 法里的 \(\bm H^{-1}\) 是两件不同的事情。Newton 的 \(\bm H\) 是 Hessian，并通过 \(-\bm H^{-1}\bm g\) 求解局部二次模型；这里的 \(\bm H\) 是梯度二阶矩，目标更接近 whitening / RMS normalization。</p>
+<h2 id="1-与其直接计算-bm-h-12不如求解-whitening-方程">1. 与其直接计算 \(\bm H^{-1/2}\)，不如求解 whitening 方程<a class="heading-anchor" href="#1-与其直接计算-bm-h-12不如求解-whitening-方程" aria-label="跳转到本节">#</a></h2>
+<p>直接维护 \(\bm P=\bm H^{-1/2}\) 的问题很明显：矩阵 inverse square root 很贵。但 \(\bm P=\bm H^{-1/2}\) 有一个等价条件 \(\bm P\bm H\bm P=\bm I\). 通过这个转化</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[PHP=P\,\mathbb E[gg^\top]P=\mathbb E[(Pg)(Pg)^\top],\]
+\[\bm P\bm H\bm P=\bm P\,\mathbb E[\bm g\bm g^\top]\bm P=\mathbb E[(\bm P\bm g)(\bm P\bm g)^\top],\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
-<p>可以定义预条件后的梯度 \(y=Pg\)，那么理想状态就是</p>
+<p>可以定义预条件后的梯度 \(\bm y=\bm P\bm g\)，那么理想状态就是</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[\mathbb E[yy^\top]=I.\]
+\[\mathbb E[\bm y\bm y^\top]=\bm I.\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>也就是说</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
 \[\boxed{
-P=H^{-1/2}
+\bm P=\bm H^{-1/2}
 \quad\Longleftrightarrow\quad
 \text{对预条件化的梯度做白化.}
 }\]
-<h2 id="2-在线训练中可以直接估计-php">2. 在线训练中，可以直接估计 \(PHP\)<a class="heading-anchor" href="#2-在线训练中可以直接估计-php" aria-label="跳转到本节">#</a></h2>
-<p>实际训练过程中通常没有精确的 \(H=\mathbb E[gg^\top]\)，但每一步都有当前梯度 \(g_t\). 于是可以构造 \(C_t=(Pg_t)(Pg_t)^\top\)，它满足</p>
+<h2 id="2-在线训练中可以直接估计-bm-pbm-hbm-p">2. 在线训练中，可以直接估计 \(\bm P\bm H\bm P\)<a class="heading-anchor" href="#2-在线训练中可以直接估计-bm-pbm-hbm-p" aria-label="跳转到本节">#</a></h2>
+<p>实际训练过程中通常没有精确的 \(\bm H=\mathbb E[\bm g\bm g^\top]\)，但每一步都有当前梯度 \(\bm g_t\). 于是可以构造 \(\bm C_t=(\bm P\bm g_t)(\bm P\bm g_t)^\top\)，它满足</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[\mathbb E[C_t]=P\mathbb E[g_tg_t^\top]P=PHP,\]
+\[\mathbb E[\bm C_t]=\bm P\mathbb E[\bm g_t\bm g_t^\top]\bm P=\bm P\bm H\bm P ,\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
-<p>所以 \(C_t\) 是 \(PHP\) 的一个估计。因而 \(PHP=I\) 就可以在线写成 \(C_t-I\to 0\).</p>
-<p>需要注意，真正要求的是 \(\mathbb E[C_t]=I\)，而 \(C_t-I\) 只是一个 noisy stochastic residual。</p>
+<p>所以 \(\bm C_t\) 是 \(\bm P\bm H\bm P\) 的一个估计。因而 \(\bm P\bm H\bm P=\bm I\) 就可以在线写成 \(\bm C_t-\bm I\to 0\).</p>
+<p>需要注意，真正要求的是 \(\mathbb E[\bm C_t]=\bm I\)，而 \(\bm C_t-\bm I\) 只是一个 noisy stochastic residual。</p>
 <p>到这里，原问题已经可以简化为</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
 \[\boxed{
-C_t=(P_tg_t)(P_tg_t)^\top,
+\bm C_t=(\bm P_t\bm g_t)(\bm P_t\bm g_t)^\top,
 \qquad
-C_t-I\to 0.
+\bm C_t-\bm I\to 0.
 }\]
-<h2 id="3-c-i-包含了什么信息">3. \(C-I\) 包含了什么信息？<a class="heading-anchor" href="#3-c-i-包含了什么信息" aria-label="跳转到本节">#</a></h2>
-<p>这一节，我们先来看看这个 \(C-I\) 可以如何理解。由于 \(C\) 是一个对称阵，不妨对其做特征分解，</p>
+<h2 id="3-bm-c_t-bm-i-包含了什么信息">3. \(\bm C_t-\bm I\) 包含了什么信息？<a class="heading-anchor" href="#3-bm-c_t-bm-i-包含了什么信息" aria-label="跳转到本节">#</a></h2>
+<p>这一节，我们先来看看这个 \(\bm C_t-\bm I\) 可以如何理解。由于 \(\bm C_t\) 是一个对称阵，不妨对其做特征分解，</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[C=U\Lambda U^\top,\quad \Lambda=\operatorname{diag}(\lambda_1,\dots,\lambda_d),\]
+\[\bm C_t=\bm U\bm \Lambda \bm U^\top,\quad \bm \Lambda=\operatorname{diag}(\lambda_1,\dots,\lambda_d),\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
-<p>这里 \(U\) 的列向量给出了当前 \(C\) 的特征向量，而 \(\lambda_i\) 则是对应的特征值。如果 \(\lambda_i>1\)，说明这个方向被放得太大，应当压缩；如果 \(\lambda_i&#x3C;1\)，说明这个方向仍然太小，应当放大。因此 \(C-I\) 实际上就是一个各向异性的白化误差。</p>
-<p>相比之下，Adam 只能看到 \(\operatorname{diag}(H)\)，因此只能逐元素调整；而此处 \(C\) 中的 off-diagonal 信息则允许 optimizer 识别旋转后的高方差方向和低方差方向。</p>
-<h2 id="4-如何实际迭代更新-p">4. 如何实际迭代更新 \(P\)？<a class="heading-anchor" href="#4-如何实际迭代更新-p" aria-label="跳转到本节">#</a></h2>
-<p>现在真正的问题只剩下 \(C\to I\) 应该对应什么样的 \(P\) 更新？</p>
+<p>这里 \(\bm U\) 的列向量给出了当前 \(\bm C_t\) 的特征向量，而 \(\lambda_i\) 则是对应的特征值。如果 \(\lambda_i>1\)，说明这个方向被放得太大，应当压缩；如果 \(\lambda_i&#x3C;1\)，说明这个方向仍然太小，应当放大。因此 \(\bm C_t-\bm I\) 实际上就是一个各向异性的白化误差。</p>
+<p>相比之下，Adam 只能看到 \(\operatorname{diag}(\bm H)\)，因此只能逐元素调整；而此处 \(\bm C_t\) 中的 off-diagonal 信息则允许 optimizer 识别旋转后的高方差方向和低方差方向。</p>
+<h2 id="4-如何实际迭代更新-bm-p">4. 如何实际迭代更新 \(\bm P\)？<a class="heading-anchor" href="#4-如何实际迭代更新-bm-p" aria-label="跳转到本节">#</a></h2>
+<p>现在真正的问题只剩下 \(\bm C_t\to \bm I\) 应该对应什么样的 \(\bm P\) 更新？</p>
 <p>最直接当然是定义一个平方损失函数</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[L(P)=\frac12\|PHP-I\|_F^2.\]
+\[L(\bm P)=\frac12\|\bm P\bm H\bm P-\bm I\|_F^2.\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
-<p>但直接对上式求梯度需要计算 \(H\)，复杂度很高，而且更新后也未必始终保持 \(P\succ0\) 这样一个约束。</p>
+<p>但直接对上式求梯度需要计算 \(\bm H\)，复杂度很高，而且更新后也未必始终保持 \(\bm P\succ0\) 这样一个约束。</p>
 <p>考虑到 GPU 做乘法运算比较高效，一个直接想法是乘法迭代，</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[P^+=APA,\]
+\[\bm P^+=\bm A^\top\bm P\bm A,\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
-<p>那么只要 \(P\succ0\) 并且 \(A\) 可逆，就有 \(P^+\succ0\). 于是问题进一步变成应该选择什么 matrix function \(f\) 来定义 \(A=f(C)\)，使得 \(C\to I\) 对应 \(P\to H^{-1/2}\)。</p>
+<p>那么只要 \(\bm P\succ0\) 并且 \(\bm A\) 可逆，就有 \(\bm P^+\succ0\). 于是问题进一步变成应该选择什么 matrix function \(f\) 来定义 \(\bm A=f(\bm C_t)\)，使得 \(\bm C_t\to \bm I\) 对应 \(\bm P\to \bm H^{-1/2}\)。</p>
 <h2 id="5-从-matrix-function-看理想-correction">5. 从 matrix function 看理想 correction<a class="heading-anchor" href="#5-从-matrix-function-看理想-correction" aria-label="跳转到本节">#</a></h2>
-<p>暂时先考虑一个最简单的 whitening 问题。假设随机向量 \(y\) 的 covariance 是 \(C=\mathbb E[yy^\top]\)，如果直接做 \(y^+=Ay\)，那么 \(C^+=ACA^\top\). 若取对称矩阵 \(A=C^{-1/2}\)，自然直接就有 \(C^+=I\). 所以 inverse square root 本身就是最自然的一种 whitening correction.</p>
+<p>暂时先考虑一个最简单的 whitening 问题。假设随机向量 \(\bm y\) 的 covariance 是 \(\bm C_t=\mathbb E[\bm y\bm y^\top]\)，如果直接做 \(\bm y^+=\bm A \bm y\)，那么 \(\bm C_t^+=\bm A \bm C_t \bm A^\top\). 若取对称矩阵 \(\bm A=\bm C_t^{-1/2}\)，自然直接就有 \(\bm C_t^+=\bm I\). 所以 inverse square root 本身就是最自然的一种 whitening correction.</p>
 <p>这提示我们可以把 preconditioner update 写成某种</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[A=C^{-\alpha},\]
+\[\bm A=\bm C^{-\alpha},\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
-<p>不过，将这一操作放进在线优化器后，情况会有所不同。训练过程中观察到的 \(C\) 往往不是精确的全局协方差，而只是由当前 mini-batch 得到的随机估计，因此直接做 \(A=C^{-1/2}\) 过于激进。因此，更自然的做法不是每一步都“完全 whiten”，而是只向 whitening fixed point 移动一部分。</p>
+<p>不过，将这一操作放进在线优化器后，情况会有所不同。训练过程中观察到的 \(\bm C\) 往往不是精确的全局协方差，而只是由当前 mini-batch 得到的随机估计，因此直接做 \(\bm A=\bm C^{-1/2}\) 过于激进。因此，更自然的做法不是每一步都“完全 whiten”，而是只向 whitening fixed point 移动一部分。</p>
 <p>一种简洁的构造是</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[A=C^{-\eta/2},\quad 0&#x3C;\eta\le 1,\]
+\[\bm A=\bm C^{-\eta/2},\quad 0&#x3C;\eta\le 1,\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
-<p>当然，真正计算 \(C^{-\eta/2}\) 本身仍然需要 matrix function，工程上不划算。这时候就可以来引入近似。</p>
+<p>当然，真正计算 \(\bm C^{-\eta/2}\) 本身仍然需要 matrix function，工程上不划算。这时候就可以来引入近似。</p>
 <h2 id="6-对-matrix-function-做近似">6. 对 matrix function 做近似<a class="heading-anchor" href="#6-对-matrix-function-做近似" aria-label="跳转到本节">#</a></h2>
-<p>如果当前 \(C\) 已经不离 \(I\) 太远，令 \(C=I+E\)，则 \(C^{-\eta/2}=(I+E)^{-\eta/2}\). 做一阶 Taylor 展开有</p>
+<p>如果当前 \(\bm C\) 已经不离 \(\bm I\) 太远，令 \(\bm C=\bm I+\bm E\)，则 \(\bm C^{-\eta/2}=(\bm I+\bm E)^{-\eta/2}\). 做一阶 Taylor 展开有</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[C^{-\eta/2}=I-\frac{\eta}{2}E+O(E^2),\]
+\[\bm C^{-\eta/2}=\bm I-\frac{\eta}{2}\bm E+O(\bm E^2),\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>于是自然得到</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[\boxed{A=I-\frac{\eta}{2}(C-I)}\]
+\[\boxed{\bm A=\bm I-\frac{\eta}{2}(\bm C-\bm I)}\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>作为最低成本的一阶 matrix-function approximation.</p>
-<p>这个形式特别适合 optimizer，其中的矩阵 \(C\) 来自一个 Gram matrix，运算均为正常的加减法，没有特征分解、求逆、矩阵对数这些相对昂贵的操作。</p>
+<p>这个形式特别适合 optimizer，其中的矩阵 \(\bm C\) 来自一个 Gram matrix，运算均为正常的加减法，没有特征分解、求逆、矩阵对数这些相对昂贵的操作。</p>
 <p>当然如果愿意多付出一些计算开销，可以继续保留二阶项：</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[C^{-\eta/2}\approx I-\frac{\eta}{2}(C-I)+\frac{\eta(\eta+2)}{8}(C-I)^2,\]
+\[\bm C^{-\eta/2}\approx \bm I-\frac{\eta}{2}(\bm C-\bm I)+\frac{\eta(\eta+2)}{8}(\bm C-\bm I)^2,\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>特别地，取 \(\eta=1\)，</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[C^{-1/2}\approx I-\frac12(C-I)+\frac38(C-I)^2.\]
+\[\bm C^{-1/2}\approx \bm I-\frac12(\bm C-\bm I)+\frac38(\bm C-\bm I)^2.\]
 <p>可以把以上方法理解成</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
 \[\boxed{
@@ -142,52 +142,52 @@ C_t-I\to 0.
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>而这和 Muon / Newton-Schulz 一类方法的工程哲学其实很接近：避免 eig/SVD，把 matrix function 改写成少量 GEMM。</p>
 <h2 id="7-如何在实现中维护-preconditioner-更新">7. 如何在实现中维护 preconditioner 更新？<a class="heading-anchor" href="#7-如何在实现中维护-preconditioner-更新" aria-label="跳转到本节">#</a></h2>
-<p>上面的这种乘法迭代可以直接作用在 \(P\) 上，但在实际实现中，我们还希望每一步都显式地保持 \(P\) 的对称正定结构。一个自然的参数化方式是引入其平方根因子 \(R\)，写成 \(P=R^\top R\)。这样，更新不再直接修改 \(P\)，而只需要做更新 \(R^+=RA\).</p>
-<p>由于 \((RA)^\top(RA)=A^\top R^\top RA\)，而这里的 \(A=f(C)\) 是 \(C\) 的对称 matrix function，满足 \(A^\top=A\)，所以新的因子确实对应于 \(P^+=APA\).</p>
+<p>上面的这种乘法迭代可以直接作用在 \(\bm P\) 上，但在实际实现中，我们还希望每一步都显式地保持 \(\bm P\) 的对称正定结构。一个自然的参数化方式是引入其平方根因子 \(\bm R\)，写成 \(\bm P=\bm R^\top \bm R\)。这样，更新不再直接修改 \(\bm P\)，而只需要做更新 \(\bm R^+=\bm R\bm A\).</p>
+<p>由于 \((\bm R\bm A)^\top(\bm R\bm A)=\bm A^\top \bm R^\top \bm R\bm A\)，而这里的 \(\bm A=f(\bm C)\) 是 \(\bm C\) 的对称 matrix function，满足 \(\bm A^\top=\bm A\)，所以新的因子确实对应于 \(\bm P^+=\bm A\bm P\bm A\).</p>
 <p>于是，一个极简版的在线算法可以写成</p>
 \[\begin{aligned}
-y&#x26;=R^\top Rg,\\
-C&#x26;=yy^\top,\\
-A&#x26;=I-\frac{\eta}{2}(C-I),\\
-R&#x26;\leftarrow RA.
+\bm y_t&#x26;=\bm R_t^\top \bm R_t\bm g_t,\\
+\bm C_t&#x26;=\bm y_t\bm y_t^\top,\\
+\bm A_t&#x26;=\bm I-\frac{\eta}{2}(\bm C_t-\bm I),\\
+\bm R_{t+1}&#x26;\leftarrow \bm R_t\bm A_t.
 \end{aligned}\]
-<p>然后用新的 \(P=R^\top R\) 预条件来做真正的参数更新。值得注意的是，这里第一个 \(y\) 是用当前的 raw gradient \(g\) 来做计算，而真正的更新 \(u\) 则可以用新的预条件来处理梯度的动量 EMA 来算。这是因为动量中包含参数跨时间的 correlation，因此更新 \(P\) 用 raw gradient 更能反映当前的 whitening 状态。</p>
+<p>然后用 \(\bm P_t=\bm R_{t+1}^\top \bm R_{t+1}\) 预条件来做真正的参数更新。值得注意的是，这里第一个 \(\bm y_t\) 是用当前的 raw gradient \(\bm g_t\) 来做计算，而真正的更新 \(\bm u_t\) 则可以用新的预条件 \(\bm P_t\) 来处理梯度的动量 EMA 来算。这是因为动量中包含参数跨时间的 correlation，因此更新 \(\bm P_t\) 用 raw gradient 更能反映当前的 whitening 状态。</p>
 <h2 id="8-从向量预条件器到矩阵参数">8. 从向量预条件器到矩阵参数<a class="heading-anchor" href="#8-从向量预条件器到矩阵参数" aria-label="跳转到本节">#</a></h2>
 <p>到目前为止，我们讨论的都是向量情形：</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[g\in\mathbb R^d,\qquad P\in\mathbb R^{d\times d},\]
+\[\bm g\in\mathbb R^d,\qquad \bm P\in\mathbb R^{d\times d},\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
-<p>然而，在真实神经网络中，参数通常是形如 \(W\in\mathbb R^{m\times n}\) 的矩阵，将其展平维度会变成 \(d=mn\)，对应的 full preconditioner 需要具有 \(P\in\mathbb R^{mn\times mn}\) 这样的 shape，显然计算开销过大，无法直接实现。因此，需要引入结构化 approximation。一种自然的选择是 Kronecker factorization</p>
+<p>然而，在真实神经网络中，参数通常是形如 \(\bm W\in\mathbb R^{m\times n}\) 的矩阵，将其展平维度会变成 \(d=mn\)，对应的 full preconditioner 需要具有 \(\bm P\in\mathbb R^{mn\times mn}\) 这样的 shape，显然计算开销过大，无法直接实现。因此，需要引入结构化 approximation。一种自然的选择是 Kronecker factorization</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[P_{\mathrm{full}}=P_b\otimes P_a,\]
+\[\bm P_{\mathrm{full}}=\bm P_b\otimes \bm P_a,\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
-<p>其中 \(P_a\in\mathbb R^{m\times m},P_b\in\mathbb R^{n\times n}\). 对于矩阵梯度 \(G\in\mathbb R^{m\times n}\)，利用 Kronecker 与向量化的恒等式，有</p>
+<p>其中 \(\bm P_a\in\mathbb R^{m\times m},\bm P_b\in\mathbb R^{n\times n}\). 对于矩阵梯度 \(\bm G\in\mathbb R^{m\times n}\)，利用 Kronecker 与向量化的恒等式，有</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[P_{\mathrm{full}}\operatorname{vec}(G)=\operatorname{vec}(P_aGP_b).\]
+\[\bm P_{\mathrm{full}}\operatorname{vec}(\bm G)=\operatorname{vec}(\bm P_a\bm G\bm P_b).\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
-<p>于是可以直接定义预条件后的矩阵梯度 \(Y=P_aGP_b\)，这样就不必构造巨大的 \(mn\times mn\) covariance，而只需分别考察两个 mode 上的 covariance：</p>
+<p>于是可以直接定义预条件后的矩阵梯度 \(\bm Y=\bm P_a\bm G\bm P_b\)，这样就不必构造巨大的 \(mn\times mn\) covariance，而只需分别考察两个 mode 上的 covariance：</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[C_a=\frac1nYY^\top,\quad C_b=\frac1mY^\top Y.\]
+\[\bm C_a=\frac1n\bm Y\bm Y^\top,\quad \bm C_b=\frac1m\bm Y^\top \bm Y.\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>理想的 fixed point 对应于</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[\mathbb E[C_a]=I_m,
+\[\mathbb E[\bm C_a]=\bm I_m,
 \qquad
-\mathbb E[C_b]=I_n.\]
+\mathbb E[\bm C_b]=\bm I_n.\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>可以证明，这两方程与 idealized KL-Shampoo 的 Kronecker covariance fixed point 等价。于是，两边都可以进行与前面相同的一阶更新</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[A_a=I-\frac{\eta_a}{2}(C_a-I),\quad A_b=I-\frac{\eta_b}{2}(C_b-I),\]
+\[\bm A_a=\bm I-\frac{\eta_a}{2}(\bm C_a-\bm I),\quad \bm A_b=\bm I-\frac{\eta_b}{2}(\bm C_b-\bm I),\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>同时维护</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[P_a=R_a^\top R_a,\qquad P_b=R_b^\top R_b,\]
+\[\bm P_a=\bm R_a^\top \bm R_a,\qquad \bm P_b=\bm R_b^\top \bm R_b,\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>并做更新</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[R_a\leftarrow R_aA_a,
+\[\bm R_a\leftarrow \bm R_a\bm A_a,
 \qquad
-R_b\leftarrow R_bA_b,\]
+\bm R_b\leftarrow \bm R_b\bm A_b,\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>就得到一个实际可实现的 Kronecker 版本。只需存储两个较小的矩阵，而不需要面对 \(mn\times mn\) 的完整计算量。后者空间上需要 \(O(m^2n^2)\)，而 Kronecker 版本只需 \(O(m^2+n^2)\)，计算上也从 \(O(m^2n^2)\) 降到 \(O(m^2n+mn^2+m^3+n^3)\)，显著降低了开销。</p><section class="article-citation"><h2 id="引用本文">引用本文<a class="heading-anchor" href="#引用本文" aria-label="跳转到本节">#</a></h2><pre><code>@online{adam_to_whitening_2026,
   title = {从 Adam 到在线矩阵 Whitening},
