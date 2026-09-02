@@ -189,7 +189,39 @@
 \qquad
 \bm R_b\leftarrow \bm R_b\bm A_b,\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
-<p>就得到一个实际可实现的 Kronecker 版本。只需存储两个较小的矩阵，而不需要面对 \(mn\times mn\) 的完整计算量。后者空间上需要 \(O(m^2n^2)\)，而 Kronecker 版本只需 \(O(m^2+n^2)\)，计算上也从 \(O(m^2n^2)\) 降到 \(O(m^2n+mn^2+m^3+n^3)\)，显著降低了开销。</p><section class="article-citation"><h2 id="引用本文">引用本文<a class="heading-anchor" href="#引用本文" aria-label="跳转到本节">#</a></h2><pre><code>@online{adam_to_whitening_2026,
+<p>就得到一个实际可实现的 Kronecker 版本。只需存储两个较小的矩阵，而不需要面对 \(mn\times mn\) 的完整计算量。后者空间上需要 \(O(m^2n^2)\)，而 Kronecker 版本只需 \(O(m^2+n^2)\)，计算上也从 \(O(m^2n^2)\) 降到 \(O(m^2n+mn^2+m^3+n^3)\)，显著降低了开销。</p>
+<h2 id="9-kl-root-kron-的正式推导">9. KL-Root-Kron 的正式推导<a class="heading-anchor" href="#9-kl-root-kron-的正式推导" aria-label="跳转到本节">#</a></h2>
+<p>以上到此的推导，都是针对 <a href="https://x.com/YouJiacheng" target="_blank" rel="noopener noreferrer">@You Jiacheng</a> 的一份报告<span class="cite-ref" id="citation--you--1"> (<a href="#bib-you">1</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">1. </span>You J. 在线维护 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi mathvariant="double-struck">E</mi><mo stretchy="false">[</mo><mi>g</mi><msup><mi>g</mi><mi mathvariant="normal">⊤</mi></msup><mo stretchy="false">]</mo><msup><mo stretchy="false">)</mo><mrow><mo>−</mo><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup></mrow><annotation encoding="application/x-tex">(\mathbb{E}[gg^\top])^{-1/2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.138em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathbb">E</span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.0359em;">g</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0359em;">g</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">⊤</span></span></span></span></span></span></span></span><span class="mclose">]</span><span class="mclose"><span class="mclose">)</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.888em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">1/2</span></span></span></span></span></span></span></span></span></span></span></span> 的 Gaussian-KL Kronecker 方案. 2026.</span></span></span>，在 <a href="https://github.com/Unakar" target="_blank" rel="noopener noreferrer">@谢天</a> 的理解基础上，补充而来的。</p>
+<p>下面回到原报告的逻辑。报告并非从 inverse-root matrix function 出发，而是先在 Gaussian-KL 目标上定义 KL-Root-Kron，再利用 SPD manifold 上的 affine-invariant metric 推出相应的在线更新。具体来说，报告首先定义</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\mathcal{J}(\bm P)=D_{\mathrm{KL}}\left(\mathcal N(0,\bm H)\Vert\mathcal N(0,\bm P^{-2})\right),\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>将 Gaussian-KL 展开，可以得到</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\mathcal{J}(\bm P)=\frac12\operatorname{tr}(\bm P^2\bm H)-\log\det \bm P+\text{const}.\]
+<p>另一方面，利用 KL 散度对可逆线性变换的不变性，\(\mathcal{J}(\bm P)\) 也可以写成</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\mathcal{J}(\bm P)=D_{\mathrm{KL}}\left(\mathcal N(0,\bm P\bm H\bm P)\Vert\mathcal N(0,\bm I)\right).\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>因此，这个目标仍然是在形式化 \(\bm P\bm H\bm P\rightarrow \bm I\).</p>
+<p>问题在于，若直接对 \(\bm P\) 使用 Euclidean gradient，仍然会出现 \(\bm P^{-1}\) 项，</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\nabla_{\bm P}\mathcal{J}(\bm P)=\frac12(\bm P\bm H+\bm H\bm P)-\bm P^{-1},\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>解依然为 \(\bm P=\bm H^{-1/2}\)，依然需要求逆。接下来真正关键的一步，是在对称正定矩阵上使用 affine-invariant metric（AIRM）。在这个度量下，Riemannian gradient 是 Euclidean gradient 的 \(\bm P\)-共轭，即 \(\bm P(\nabla_{\bm P}\mathcal{J}(\bm P))\bm P\)。令当前样本对应的 \(C=\bm P\bm g\bm g^\top \bm P\)，便有</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\operatorname{grad}_{\rm AIRM}\mathcal{J}=\frac12\left[\bm P(C-\bm I)+(C-\bm I)\bm P\right],\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>正好消去原本的 \(\bm P^{-1}\) 项。接着采用 congruence update \(\bm P^+=\bm A\bm P\bm A\)，其中取 \(\bm A=\bm I-\frac{\eta}{2}(\bm C-\bm I)\)。对这个更新做一阶展开：</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\bm A\bm P\bm A=\bm P-\frac{\eta}{2}\left[(\bm C-\bm I)\bm P+\bm P(\bm C-\bm I)\right]+O(\eta^2),\]
+<p>可见它正好匹配负的 AIRM natural-gradient direction。</p>
+<p>从严格几何推导看，\(\bm A=\bm I-\frac{\eta}{2}(\bm C-\bm I)\) 是与 AIRM natural gradient 一阶匹配的 congruence update；而从 matrix-function 角度看，它又恰好是 \(C^{-\eta/2}\) 在 \(C\approx I\) 附近的一阶近似。</p>
+<h2 id="参考文献">参考文献<a class="heading-anchor" href="#参考文献" aria-label="跳转到本节">#</a></h2><div id="refs" class="references csl-bib-body">
+  <div class="csl-entry" id="bib-you">
+    <div class="csl-left-margin">1. </div><div class="csl-right-inline">You J. 在线维护 <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi mathvariant="double-struck">E</mi><mo stretchy="false">[</mo><mi>g</mi><msup><mi>g</mi><mi mathvariant="normal">⊤</mi></msup><mo stretchy="false">]</mo><msup><mo stretchy="false">)</mo><mrow><mo>−</mo><mn>1</mn><mi mathvariant="normal">/</mi><mn>2</mn></mrow></msup></mrow><annotation encoding="application/x-tex">(\mathbb{E}[gg^\top])^{-1/2}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="katex-base"><span class="katex-strut" style="height:1.138em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathbb">E</span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.0359em;">g</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0359em;">g</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8491em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight">⊤</span></span></span></span></span></span></span></span><span class="mclose">]</span><span class="mclose"><span class="mclose">)</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.888em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="katex-sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">−</span><span class="mord mtight">1/2</span></span></span></span></span></span></span></span></span></span></span></span> 的 Gaussian-KL Kronecker 方案. 2026.</div>
+   </div>
+</div><section class="article-citation"><h2 id="引用本文">引用本文<a class="heading-anchor" href="#引用本文" aria-label="跳转到本节">#</a></h2><pre><code>@online{adam_to_whitening_2026,
   title = {从 Adam 到在线矩阵 Whitening},
   author = {Haoyu Tang},
   year = {2026},
