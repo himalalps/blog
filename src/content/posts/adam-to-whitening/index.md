@@ -4,6 +4,7 @@ description: "从 Adam 的对角二阶矩出发，理解在线矩阵 Whitening�
 date: "2026-09-01"
 lang: "zh-CN"
 author: "Haoyu Tang"
+bibliography: "ref.bib"
 ---
 
 # 从 Adam 到在线矩阵 Whitening

@@ -1,5 +1,8 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import katex from 'katex';
 import rehypeCitation from 'rehype-citation';
 
 // Vancouver-derived CSL: keeps dots in container-title (arXiv IDs), drops
@@ -48,10 +51,20 @@ export default function rehypeCite() {
     // relative to the markdown file's directory.
     const baseDir = path.isAbsolute(bib) ? path.dirname(bib) : path.dirname(mdPath);
     const bibName = path.isAbsolute(bib) ? path.basename(bib) : bib;
+    const sourceBib = await readFile(path.join(baseDir, bibName), 'utf8');
+    const mathMarkers = [];
+    const protectedBib = sourceBib.replace(/\$([^$]+)\$/g, (_, formula) => {
+      const marker = `@@KATEX_MATH_${mathMarkers.length}@@`;
+      mathMarkers.push(formula);
+      return marker;
+    });
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), 'rehype-cite-'));
+    await writeFile(path.join(tempDir, 'bibliography.bib'), protectedBib, 'utf8');
+
     const result = rehypeCitation({
-      bibliography: bibName,
-      path: baseDir,
-      csl: path.relative(baseDir, CSL_PATH),
+      bibliography: 'bibliography.bib',
+      path: tempDir,
+      csl: path.relative(tempDir, CSL_PATH),
       linkCitations: true,
       showTooltips: true,
       tooltipAttribute: 'data-tooltip',
@@ -59,12 +72,42 @@ export default function rehypeCite() {
     });
 
     const transform = typeof result === 'function' ? result : result?.[0];
-    if (typeof transform === 'function') {
-      await transform(tree, file);
-      ensureReferencesHeading(tree);
-      decorateCitations(tree);
+    try {
+      if (typeof transform === 'function') {
+        await transform(tree, file);
+        ensureReferencesHeading(tree);
+        renderCitationMath(tree, mathMarkers);
+        decorateCitations(tree);
+      }
+    } finally {
+      await rm(tempDir, { recursive: true, force: true });
     }
   };
+}
+
+function renderCitationMath(tree, formulas) {
+  const walk = node => {
+    if (!node.children) return;
+    const next = [];
+    for (const child of node.children) {
+      const markerRe = /@@KATEX_MATH_(\d+)@@/g;
+      if (child.type === 'text' && markerRe.test(child.value)) {
+        markerRe.lastIndex = 0;
+        let last = 0;
+        for (const match of child.value.matchAll(markerRe)) {
+          if (match.index > last) next.push({ type: 'text', value: child.value.slice(last, match.index) });
+          next.push({ type: 'raw', value: katex.renderToString(formulas[Number(match[1])], { displayMode: false, throwOnError: false }) });
+          last = match.index + match[0].length;
+        }
+        if (last < child.value.length) next.push({ type: 'text', value: child.value.slice(last) });
+      } else {
+        walk(child);
+        next.push(child);
+      }
+    }
+    node.children = next;
+  };
+  walk(tree);
 }
 
 function ensureReferencesHeading(tree) {

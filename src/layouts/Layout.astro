@@ -2,6 +2,7 @@
 import Search from '../components/Search.vue';
 import { getPostSummaries } from '../lib/posts';
 import { basePath, withBase } from '../lib/site';
+import 'katex/dist/katex.min.css';
 import '../styles/global.css';
 
 const { title, description, lang = 'zh-CN' } = Astro.props;
