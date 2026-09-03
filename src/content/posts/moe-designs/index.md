@@ -161,6 +161,7 @@ $$
 | [GLM-5.3-Flash](https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/config.json)             | 4096  | 2048  |  8 / 288 |  16384  | 4.000              |   1   | 4.500               |
 | [DeepSeek-V4-Flash](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/config.json) | 4096  | 2048  |  6 / 256 |  12288  | 3.000              |   1   | 3.500               |
 | [Qwen3.8-Flash-Next](https://huggingface.co/Qwen/Qwen3.8-Flash-Next/blob/main/config.json)      | 2560  |  640  | 10 / 512 |  6400   | 2.500              |   1   | 2.750               |
+:::
 
 $$
 \begin{equation}
@@ -197,6 +198,7 @@ $$
 | [GLM-5.3-Flash](https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/config.json)             | 4096  | 2048  |   8/288 |   1   |       25.17M        |              *1.18M |                -                 |             7.274B              |                227.67M                 |
 | [DeepSeek-V4-Flash](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/config.json) | 4096  | 2048  |   6/256 |   1   |       25.17M        |              *1.05M |                -                 |             6.469B              |                177.21M                 |
 | [Qwen3.8-Flash-Next](https://huggingface.co/Qwen/Qwen3.8-Flash-Next/blob/main/config.json)      | 2560  |  640  |  10/512 |   1   |       4.915M        |               1.31M |        2560(shared Gate)         |             2.523B              |                 55.38M                 |
+:::
 
 上表中 router 参数量标*的意味着还有 loss-free 的 bias 参数，这个参数的 shape 和 $N_r$ 一样，相比整体的router参数很小。Kimi-K3 系列因为在 routed path 上用了 Stable LatentMoE，所以 shared expert 和 routed expert 的参数量不一样，其他模型的 shared expert 与 routed expert 参数量都是一致的。Qwen 的两个模型在 shared expert 上还额外加了一个标量的 gate 来做控制，这个参数量和 $d$ 相同，也就是每层统一对 shared expert 做缩放。
 
@@ -211,6 +213,7 @@ $$
 | [GLM-5.3-Flash](https://huggingface.co/zai-org/GLM-5.3-Flash/blob/main/config.json)             |  45   |        42        |                          7.274B |     305.51B      |      313.89B       |              97.33%               |                227.67M                 |             9.5622B              |              17.940B               |                              53.30%                               |
 | [DeepSeek-V4-Flash](https://huggingface.co/deepseek-ai/DeepSeek-V4-Flash/blob/main/config.json) |  43   |        43        |                          6.469B |     278.15B      |      284.33B       |              97.83%               |                177.21M                 |             7.6200B              |              13.802B               |                              55.21%                               |
 | [Qwen3.8-Flash-Next](https://huggingface.co/Qwen/Qwen3.8-Flash-Next/blob/main/config.json)      |  48   |        48        |                          2.523B |     121.09B      |      126.19B       |              95.96%               |                55.380M                 |             2.6583B              |              7.7562B               |                              34.27%                               |
+:::
 
 此处统计均不统计 MTP 参数量，而保留了普通的 embedding/LM head 以及视觉模型保留 vision encoder 相关参数。Qwen3.8-Flash-Next 中的 ngram embedding 也排除在外。
 

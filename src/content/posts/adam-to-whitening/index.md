@@ -28,7 +28,7 @@ $$
 $$
 \bm P=\bm H^{-1/2},\qquad \bm H=\mathbb E[\bm g\bm g^\top],
 $$
-由于 $\bm H$ 是梯度 covariance，它天然是对称半正定矩阵。为了让通常意义下的 inverse square root 有定义，下面先假设 $\bm H\succ0$；如果 $\bm H$ 存在退化方向，实际实现中通常对它加入一个很小的 damping，使用 $(\bm H+\varepsilon I)^{-1/2}$。在这个假设下，$\bm P$ 也是对称正定矩阵，即 $\bm P\succ0$.
+由于 $\bm H$ 是梯度 covariance，它天然是对称半正定矩阵。为了让通常意义下的 inverse square root 有定义，下面先假设 $\bm H\succ0$；如果 $\bm H$ 存在退化方向，实际实现中通常对它加入一个很小的 damping，使用 $(\bm H+\varepsilon \bm I)^{-1/2}$。在这个假设下，$\bm P$ 也是对称正定矩阵，即 $\bm P\succ0$.
 
 此时参数更新变成
 $$
@@ -54,7 +54,6 @@ $$
 \text{对预条件化的梯度做白化.}
 }
 $$
-
 
 ## 2. 在线训练中，可以直接估计 $\bm P\bm H\bm P$
 
@@ -257,4 +256,8 @@ $$
 
 而原报告则进一步说明，这种更新可以从 Gaussian KL 目标以及 SPD manifold 上的 affine-invariant natural gradient 严格推出，同时其 Kronecker stationary equations 与 idealized KL-Shampoo 一致。
 
+[^bib]
+
 [^ref]
+
+[^giscus]
