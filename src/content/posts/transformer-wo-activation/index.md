@@ -128,9 +128,9 @@ $$
 
 回到最初的系统动机，把 SwiGLU 换成 Bilinear FFN 并不会直接减少参数量。两个输入 projection 和一个输出 projection 仍然存在，主要 GEMM 的形状也没有改变；如果只看参数量和通常的 FLOPs 统计，这次替换省下的只是 SiLU 对应的逐元素运算。
 
-但 FLOPs 并不等于实际运行时间。它无法完整反映访存、kernel launch，以及 GEMM 与后处理算子之间的流水线停顿。这个差异在细粒度 MoE 中尤其可能被放大：单个 expert 的 GEMM 规模较小，低精度矩阵乘法又已经得到高度优化，此时 post-GEMM 阶段的 SiLU 即使只占很少的理论 FLOPs，也可能形成不可忽略的 wall-clock 开销。去掉其中的指数和除法，正对应 DeepSeek-V4 在开头强调的系统收益。
+但 FLOPs 并不等于实际运行时间，它不反映访存、kernel launch，以及 GEMM 与后处理算子之间的流水线停顿。这个差异在细粒度 MoE 中尤其可能被放大：单个 expert 的 GEMM 规模较小，低精度矩阵乘法又已经得到高度优化，此时 post-GEMM 阶段的 SiLU 即使只占很少的理论 FLOPs，也可能形成不可忽略的 wall-clock 开销。正是 DeepSeek-V4 在开头强调的系统收益启发了本文去除指数/除法的想法。
 
-因此，需要把两类收益分开讨论。第一类是保持 expert 结构不变，仅仅去掉 SiLU 所带来的实现层收益：它可能缩短 post-GEMM pipeline，但既不改变 FFN 的渐近复杂度，也不减少 MoE 的参数量。第二类才是架构层收益，即利用 Bilinear FFN 更规整的乘法结构，进一步改变 expert 的 parameter/FLOPs trade-off；这一点不会由删除 activation 自动获得，还需要额外的结构设计。
+当然，从 SwiGLU 去除 SiLU 的后果也是系统性的，EP 相关实现也得重新设计，尤其是通信/计算 overlap 的部分，routed shared expert 比例也会影响这里的 overlap 能否掩盖开销，也许有很多和现有架构不一样的点值得发现与尝试。
 
 [^bib]
 
