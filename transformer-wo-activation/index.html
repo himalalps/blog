@@ -1,0 +1,161 @@
+<!DOCTYPE html><html lang="zh-CN" data-astro-cid-sckkx6r4> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script>
+      (() => {
+        const themeKey = 'vibe-theme';
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+        try {
+          const savedTheme = window.localStorage.getItem(themeKey);
+          document.documentElement.dataset.theme = savedTheme === 'dark' || savedTheme === 'light'
+            ? savedTheme
+            : systemTheme;
+        } catch {
+          document.documentElement.dataset.theme = systemTheme;
+        }
+      })();
+    </script><script>
+      window.MathJax = {
+        tex: {
+          tags: 'ams',
+          packages: { '[+]': ['ams'] },
+          macros: {
+            bm: ['\\boldsymbol{#1}', 1],
+            R: '\\mathbb{R}',
+            E: '\\mathbb{E}',
+            argmax: '\\operatorname*{arg\\,max}',
+            argmin: '\\operatorname*{arg\\,min}',
+            on: ['\\operatorname{#1}', 1],
+            dff: 'd_{\\mathrm{ff}}',
+          },
+        },
+        svg: { fontCache: 'global' },
+      };
+    </script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script><title>从 Linear Attention 到 Tensor Transformer：如果 Transformer 不再需要显式 Activation？ - Vibe</title><meta name="description" content="从 DeepSeek-V4 对 SwiGLU 开销的讨论出发，借助 Bilinear FFN、Linear Attention 与多项式函数族，分析 Transformer 是否需要显式激活函数。"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="alternate" type="application/rss+xml" href="/rss.xml" title="Vibe 博客"><style>.post-cover[data-astro-cid-yvbahnfj]{display:block;width:100%;height:auto;margin-bottom:2.5rem;border:2px solid var(--border-color)}
+</style>
+<link rel="stylesheet" href="/_astro/_slug_.BoBfiSZ8.css"><script type="module">(()=>{const t=e=>{const o=e.parentElement;if(!o)return;e.dataset.fitMarginBottom||(e.dataset.fitMarginBottom=getComputedStyle(e).marginBottom);const a=parseFloat(e.dataset.fitMarginBottom)||0;e.style.transform="none",e.style.width="max-content",e.style.marginBottom="";const s=o.clientWidth,r=e.scrollWidth;if(!s||r<=s)return;const l=s/r;e.style.transform=`scale(${l})`,e.style.width=`${r}px`;const h=e.offsetHeight*(1-l);e.style.marginBottom=`${a-h}px`},n=document.querySelectorAll(".post-content .table.fit > table");if(n.forEach(e=>t(e)),typeof ResizeObserver<"u"){const e=new ResizeObserver(o=>{o.forEach(({target:a})=>{const s=a.querySelector(":scope > table");s&&t(s)})});n.forEach(o=>e.observe(o.parentElement))}else window.addEventListener("resize",()=>n.forEach(e=>t(e)))})();const c=()=>{if(document.querySelectorAll(".references .csl-entry.is-citation-target").forEach(e=>{e.classList.remove("is-citation-target")}),!window.location.hash.startsWith("#bib-"))return;let t=window.location.hash.slice(1);try{t=decodeURIComponent(t)}catch{}const n=document.getElementById(t);n?.matches(".references .csl-entry")&&n.classList.add("is-citation-target")};document.addEventListener("click",t=>{if(!window.location.hash.startsWith("#bib-")||!(t.target instanceof Element))return;const n=t.target.closest("a[href]");n instanceof HTMLAnchorElement&&n.hash.startsWith("#bib-")||(window.history.replaceState(window.history.state,"",`${window.location.pathname}${window.location.search}`),c())});window.addEventListener("hashchange",c);c();const m="vibe-theme",i=document.querySelector("#theme-toggle"),d=()=>{if(!(i instanceof HTMLButtonElement))return;const t=document.documentElement.dataset.theme==="dark",n=t?"切换到浅色模式":"切换到深色模式";i.setAttribute("aria-label",n),i.setAttribute("aria-pressed",String(t)),i.title=n};i?.addEventListener("click",()=>{const t=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=t;try{window.localStorage.setItem(m,t)}catch{}d()});window.addEventListener("storage",t=>{t.key!==m||t.newValue!=="dark"&&t.newValue!=="light"||(document.documentElement.dataset.theme=t.newValue,d())});d();document.addEventListener("DOMContentLoaded",function(){const t=document.createElement("div");t.className="copy-notification",t.textContent="已复制",document.body.appendChild(t),document.querySelectorAll("pre.astro-code, .article-citation pre").forEach(e=>{e.style.cursor="pointer",e.title="点击复制",e.addEventListener("click",function(){const o=this.querySelector("code").textContent;navigator.clipboard.writeText(o).then(()=>{t.classList.add("show"),setTimeout(()=>{t.classList.remove("show")},2e3)})})})});
+</script></head> <body data-astro-cid-sckkx6r4> <header data-astro-cid-sckkx6r4> <nav data-astro-cid-sckkx6r4> <a href="/" class="logo" data-astro-cid-sckkx6r4>VIBE</a> <div class="search" data-astro-cid-sckkx6r4> <style>astro-island,astro-slot,astro-static-slot{display:contents}</style><script>(()=>{var e=async t=>{await(await t())()};(self.Astro||(self.Astro={})).load=e;window.dispatchEvent(new Event("astro:load"));})();;(()=>{var A=Object.defineProperty;var g=(i,o,a)=>o in i?A(i,o,{enumerable:!0,configurable:!0,writable:!0,value:a}):i[o]=a;var d=(i,o,a)=>g(i,typeof o!="symbol"?o+"":o,a);{let i={0:t=>m(t),1:t=>a(t),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(a(t)),5:t=>new Set(a(t)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(t),9:t=>new Uint16Array(t),10:t=>new Uint32Array(t),11:t=>1/0*t},o=t=>{let[l,e]=t;return l in i?i[l](e):void 0},a=t=>t.map(o),m=t=>typeof t!="object"||t===null?t:Object.fromEntries(Object.entries(t).map(([l,e])=>[l,o(e)]));class y extends HTMLElement{constructor(){super(...arguments);d(this,"Component");d(this,"hydrator");d(this,"hydrate",async()=>{var b;if(!this.hydrator||!this.isConnected)return;let e=(b=this.parentElement)==null?void 0:b.closest("astro-island[ssr]");if(e){e.addEventListener("astro:hydrate",this.hydrate,{once:!0});return}let c=this.querySelectorAll("astro-slot"),n={},h=this.querySelectorAll("template[data-astro-template]");for(let r of h){let s=r.closest(this.tagName);s!=null&&s.isSameNode(this)&&(n[r.getAttribute("data-astro-template")||"default"]=r.innerHTML,r.remove())}for(let r of c){let s=r.closest(this.tagName);s!=null&&s.isSameNode(this)&&(n[r.getAttribute("name")||"default"]=r.innerHTML)}let p;try{p=this.hasAttribute("props")?m(JSON.parse(this.getAttribute("props"))):{}}catch(r){let s=this.getAttribute("component-url")||"<unknown>",v=this.getAttribute("component-export");throw v&&(s+=` (export ${v})`),console.error(`[hydrate] Error parsing props for component ${s}`,this.getAttribute("props"),r),r}let u;await this.hydrator(this)(this.Component,p,n,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),this.dispatchEvent(new CustomEvent("astro:hydrate"))});d(this,"unmount",()=>{this.isConnected||this.dispatchEvent(new CustomEvent("astro:unmount"))})}disconnectedCallback(){document.removeEventListener("astro:after-swap",this.unmount),document.addEventListener("astro:after-swap",this.unmount,{once:!0})}connectedCallback(){if(!this.hasAttribute("await-children")||document.readyState==="interactive"||document.readyState==="complete")this.childrenConnectedCallback();else{let e=()=>{document.removeEventListener("DOMContentLoaded",e),c.disconnect(),this.childrenConnectedCallback()},c=new MutationObserver(()=>{var n;((n=this.lastChild)==null?void 0:n.nodeType)===Node.COMMENT_NODE&&this.lastChild.nodeValue==="astro:end"&&(this.lastChild.remove(),e())});c.observe(this,{childList:!0}),document.addEventListener("DOMContentLoaded",e)}}async childrenConnectedCallback(){let e=this.getAttribute("before-hydration-url");e&&await import(e),this.start()}async start(){let e=JSON.parse(this.getAttribute("opts")),c=this.getAttribute("client");if(Astro[c]===void 0){window.addEventListener(`astro:${c}`,()=>this.start(),{once:!0});return}try{await Astro[c](async()=>{let n=this.getAttribute("renderer-url"),[h,{default:p}]=await Promise.all([import(this.getAttribute("component-url")),n?import(n):()=>()=>{}]),u=this.getAttribute("component-export")||"default";if(!u.includes("."))this.Component=h[u];else{this.Component=h;for(let f of u.split("."))this.Component=this.Component[f]}return this.hydrator=p,this.hydrate},e,this)}catch(n){console.error(`[astro-island] Error hydrating ${this.getAttribute("component-url")}`,n)}}attributeChangedCallback(){this.hydrate()}}d(y,"observedAttributes",["props"]),customElements.get("astro-island")||customElements.define("astro-island",y)}})();</script><astro-island uid="Z1Disb0" prefix="v0" component-url="/_astro/Search.BIdnNo0W.js" component-export="default" renderer-url="/_astro/client.Cje-dOff.js" props="{&quot;posts&quot;:[1,[[0,{&quot;slug&quot;:[0,&quot;transformer-wo-activation&quot;],&quot;title&quot;:[0,&quot;从 Linear Attention 到 Tensor Transformer：如果 Transformer 不再需要显式 Activation？&quot;],&quot;description&quot;:[0,&quot;从 DeepSeek-V4 对 SwiGLU 开销的讨论出发，借助 Bilinear FFN、Linear Attention 与多项式函数族，分析 Transformer 是否需要显式激活函数。&quot;],&quot;date&quot;:[0,&quot;2026-09-03&quot;],&quot;lang&quot;:[0,&quot;zh-CN&quot;]}],[0,{&quot;slug&quot;:[0,&quot;adam-to-whitening&quot;],&quot;title&quot;:[0,&quot;从 Adam 到在线矩阵 Whitening&quot;],&quot;description&quot;:[0,&quot;从 Adam 的对角二阶矩出发，理解在线矩阵 Whitening、KL-Root-Kron 及其 Kronecker 实现。&quot;],&quot;date&quot;:[0,&quot;2026-09-01&quot;],&quot;lang&quot;:[0,&quot;zh-CN&quot;]}],[0,{&quot;slug&quot;:[0,&quot;moe-designs&quot;],&quot;title&quot;:[0,&quot;模型架构：1. MoE&quot;],&quot;description&quot;:[0,&quot;模型架构系列第一篇，围绕 MoE 的基本结构、SwiGLU 与细粒度专家设计，梳理共享专家、路由函数、负载均衡和专家并行等关键取舍。&quot;],&quot;date&quot;:[0,&quot;2026-08-30&quot;],&quot;lang&quot;:[0,&quot;zh-CN&quot;]}]]],&quot;baseUrl&quot;:[0,&quot;&quot;],&quot;data-astro-cid-sckkx6r4&quot;:[0,true]}" ssr="" client="load" opts="{&quot;name&quot;:&quot;Search&quot;,&quot;value&quot;:true}" await-children=""><div class="search-container" data-astro-cid-sckkx6r4="true" data-v-4b7212b7><input type="search" value="" placeholder="搜索文章..." aria-label="搜索博客文章" autocomplete="off" class="search-input" data-v-4b7212b7><!----></div><!--astro:end--></astro-island> </div> <div class="header-tools" data-astro-cid-sckkx6r4> <a href="/archive" class="archive-link" aria-label="文章归档" title="文章归档" data-astro-cid-sckkx6r4><span class="archive-icon" aria-hidden="true" data-astro-cid-sckkx6r4>▤</span></a> <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换到深色模式" aria-pressed="false" title="切换到深色模式" data-astro-cid-sckkx6r4> <span class="theme-icon theme-icon-dark" aria-hidden="true" data-astro-cid-sckkx6r4>☾</span> <span class="theme-icon theme-icon-light" aria-hidden="true" data-astro-cid-sckkx6r4>☀</span> </button> </div> </nav> </header> <main data-astro-cid-sckkx6r4>  <article class="post-content" data-astro-cid-yvbahnfj> <p class="date" data-astro-cid-yvbahnfj>2026-09-03</p>  <h1 id="从-linear-attention-到-tensor-transformer如果-transformer-不再需要显式-activation">从 Linear Attention 到 Tensor Transformer：如果 Transformer 不再需要显式 Activation？</h1>
+<p>DeepSeek-V4 报告<span class="cite-ref" id="citation--deepseekai2026deepseekv4highlyefficientmilliontoken--1"> (<a href="#bib-deepseekai2026deepseekv4highlyefficientmilliontoken">1</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">1. </span>DeepSeek-AI. DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence. 2026. <a href="https://arxiv.org/abs/2606.19348" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2606.19348</a></span></span></span> 里有这么一段话：</p>
+<blockquote>
+<p>We propose replacing SwiGLU with a low-cost element-wise activation that involves no exponential or division operations. This directly reduces the overhead of post-GEMM processing, preventing the GEMM pipeline from being stalled by activation function computation, thereby enhancing overall computational throughput and resource utilization.</p>
+</blockquote>
+<p>当下的前沿 MoE 模型基本都采用 SwiGLU，其中的非线性激活函数 SiLU 需要计算 \(\on{Sigmoid}(x)=1/(1+\exp(-x))\)，包含 GPU 并不高效的指数和除法操作。但即使如此，DeepSeek-V4 也只是把替换 SwiGLU 作为 proposal，并没有在最终架构中真正对这一模块动刀子。</p>
+<p>最近看到的一篇文章<span class="cite-ref" id="citation--tensor-transformer-variants--2"> (<a href="#bib-tensor-transformer-variants">2</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">2. </span>Riggs L. Tensor-Transformer Variants are Surprisingly Performant. 2026. <a href="https://www.lesswrong.com/posts/hp9bvkiN3RzHgP9cq/tensor-transformer-variants-are-surprisingly-performant" target="_blank" rel="noopener noreferrer">https://www.lesswrong.com/posts/hp9bvkiN3RzHgP9cq/tensor-transformer-variants-are-surprisingly-performant</a></span></span></span>，则尝试直接去掉这里的 SiLU，文章的实验结果也有些出人意料：对于约 500M 参数的模型，用 bilinear layer 替代 SwiGLU 几乎没有明显的损失，这里的损失甚至小于把 Softmax Attention 替换为 Bilinear Attention. 本文尝试来理解这个结果，并进一步讨论可能的潜在探索方向。</p>
+<h2 id="1-bilinear-ffn去除-silu-的-swiglu">1. Bilinear FFN：去除 SiLU 的 SwiGLU<a class="heading-anchor" href="#1-bilinear-ffn去除-silu-的-swiglu" aria-label="跳转到本节">#</a></h2>
+<p>先来看 Tensor Transformer 对 FFN 做的改动。现代 LLM 中常见的 SwiGLU 可以写成</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\operatorname{SwiGLU}(\bm x)=\bm W_o\left[\operatorname{SiLU}(\bm W_g\bm x)\odot\bm W_u\bm x\right].\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>其中 \(\bm W_g\) 对应 gate branch，\(\bm W_u\) 对应 up branch. Tensor Transformer 使用的 Bilinear FFN 则直接去掉 SiLU</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\operatorname{Bilinear}(\bm x)=\bm W_o\left[(\bm W_1\bm x)\odot(\bm W_2\bm x)\right].\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>看上去只是少算了一个 \(\operatorname{SiLU}\)，但从函数形式上看这却是一个很激进的改动：整个 FFN 不再包含任何显式的非多项式激活函数. 笔者看到这里的第一反应是，这不就退化成线性层了吗？</p>
+<p>答案其实是否定的。虽然 \(\bm W_1\bm x\) 和 \(\bm W_2\bm x\) 都是 \(\bm x\) 的线性函数，但二者的逐元素乘积是二次函数。设 FFN 的 intermediate size 为 \(m\)，对于第 \(k\) 个中间维度有</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[(\bm W_1\bm x)_k(\bm W_2\bm x)_k=\sum_{i,j}(\bm W_1)_{ki}(\bm W_2)_{kj}\bm x_i\bm x_j.\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>进一步考虑 Bilinear FFN 输出 \(\bm y\) 的第 \(l\) 个分量。用 \(\bm W_o\) 对上述 \(m\) 个中间维度加权求和，有</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\begin{aligned}
+\bm y_l&#x26;=\sum_{k=1}^{m}(\bm W_o)_{lk}(\bm W_1\bm x)_k(\bm W_2\bm x)_k\\
+&#x26;=\sum_{i,j}\left[\sum_{k=1}^{m}(\bm W_o)_{lk}(\bm W_1)_{ki}(\bm W_2)_{kj}
+\right]\bm x_i\bm x_j\\
+&#x26;=\sum_{i,j}\bm T_{lij}\bm x_i\bm x_j,
+\end{aligned}\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>其中 \(\bm T_{lij}=\sum_{k=1}^{m}(\bm W_o)_{lk}(\bm W_1)_{ki}(\bm W_2)_{kj}\in\mathbb R^{d_{\mathrm{out}}\times d\times d}\) 是一个三阶 tensor，三个矩阵 \(\bm W_o,\bm W_1,\bm W_2\) 实际上给出了 \(\bm T\) 的一个低秩分解。Bilinear FFN 因而是经过低秩参数化的 quadratic map，去掉 SiLU 并未把 MLP 变成一个单线性层，而是把用这里的逐元素积实现了二阶的非线性映射，而多层叠加后也可以因而产生更高阶的多项式交互。</p>
+<p>从这个角度再看 SwiGLU，会发现其中本来就同时包含两种非线性来源：SiLU 提供显式的激活函数，而 gate 与 up branch 的逐元素乘法提供隐式乘性非线性。这其实在六年前就已经被 Noam Shazeer 进行过对比实验<span class="cite-ref" id="citation--shazeer2020gluvariantsimprovetransformer--3"> (<a href="#bib-shazeer2020gluvariantsimprovetransformer">3</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">3. </span>Shazeer N. GLU Variants Improve Transformer. 2020. <a href="https://arxiv.org/abs/2002.05202" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2002.05202</a></span></span></span>，在 Loss 以及下游任务上相比最优的带激活函数的 GLU，这种 Bilinear FFN 也只是差了一些，总体上是 GEGLU≈SwiGLU>ReGLU≈Bilinear>GLU>普通 ReLU/GELU/Swish FFN. 但值得注意的是，当时的实验还没有进入 MoE 时代，整体规模也还比较小。</p>
+<p>经典 universal approximation theorem 告诉我们，对于标准单隐藏层前馈网络，在适当条件下，非多项式 activation 与其稠密函数逼近能力密切相关。SiLU、ReLU 和 GELU 都属于这里的非多项式 activation.</p>
+<p>Bilinear FFN 显然不同。单层映射 \(\bm W_o[(\bm W_1\bm x)\odot(\bm W_2\bm x)]\) 严格来说只是二次多项式，因此固定为单层时，它当然不具有普通非多项式 activation MLP 那样的函数族。但这并不意味着深层网络也只能表达低阶，如果每层都是二次映射，在暂时忽略 residual 和 normalization 的情况下，组合起来会使这里的阶数随深度快速增长：第 \(1\) 层最高为 \(2\) 阶，第 \(2\) 层最高为 \(4\) 阶，到第 \(L\) 层则可以达到 \(2^L\) 阶。</p>
+<p>传统 MLP 直接使用非线性激活，通过增加 width 就可以构造复杂函数；Bilinear network 则更多依靠 \(\bm x_i\bm x_j\) 及其深层组合所产生的高阶 interaction. 当前一些模型的深度已经达到几十上百，那么这么深的一个模型中如果换用 Bilinear FFN 其实也已经可以产生非常丰富的高阶多项式。</p>
+<h2 id="2-bilinear-attention基于二阶-map-的-linear-attention">2. Bilinear Attention：基于二阶 Map 的 Linear Attention<a class="heading-anchor" href="#2-bilinear-attention基于二阶-map-的-linear-attention" aria-label="跳转到本节">#</a></h2>
+<p>Tensor Transformer 还把这种构造推广到了 Attention 中。先考虑标准 Attention</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\bm Y=\operatorname{Softmax}(\bm Q\bm K^\top)\bm V,\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>Bilinear Attention 不再对一组 query-key score 使用 Softmax，而是先构造两组 query 和 key 投影，再将这里的两张 score matrix 逐元素相乘</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\bm A=(\bm Q_1\bm K_1^\top)\odot(\bm Q_2\bm K_2^\top),\qquad\bm Y=\bm A\bm V,\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>其中 \(\bm Q_1,\bm Q_2\) 是两个 query branch，\(\bm K_1,\bm K_2\) 是对应的 key branch，\(\odot\) 表示 Hadamard product. 对于第 \(i\) 个 query 位置和第 \(j\) 个 key 位置，Attention weight 为</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\begin{aligned}
+\bm A_{ij}&#x26;=(\bm Q_1\bm K_1^\top)_{ij}(\bm Q_2\bm K_2^\top)_{ij}\\
+&#x26;=(\bm q_{1,i}^\top\bm k_{1,j})(\bm q_{2,i}^\top\bm k_{2,j}),
+\end{aligned}\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>这里 \(\bm q_{1,i}\) 是 \(\bm Q_1\) 的第 \(i\) 行，\(\bm k_{1,j}\) 是 \(\bm K_1\) 的第 \(j\) 行，\(\bm q_{2,i}\) 和 \(\bm k_{2,j}\) 同理. 这和 Bilinear FFN 的结构完全一致：每个 branch 本身都是线性的，二者相乘后则产生二阶 interaction. 利用 Kronecker product 恒等式</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[(\bm a^\top\bm b)(\bm c^\top\bm d)=(\bm a\otimes\bm c)^\top(\bm b\otimes\bm d),\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>可以为两个 branch 的组合定义二阶 feature map</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\phi(\bm q)=\bm q_1\otimes\bm q_2,\qquad\phi(\bm k)=\bm k_1\otimes\bm k_2,\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>这样就得到 \(\bm A_{ij}=\phi(\bm q_i)^\top\phi(\bm k_j)\)，进而有 \(\bm A=\bm\Phi(\bm Q)\bm\Phi(\bm K)^\top\)，这是标准的 Linear Attention 形式。</p>
+<p>不过，<span class="cite-ref" id="citation--tensor-transformer-variants--4"> (<a href="#bib-tensor-transformer-variants">2</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">2. </span>Riggs L. Tensor-Transformer Variants are Surprisingly Performant. 2026. <a href="https://www.lesswrong.com/posts/hp9bvkiN3RzHgP9cq/tensor-transformer-variants-are-surprisingly-performant" target="_blank" rel="noopener noreferrer">https://www.lesswrong.com/posts/hp9bvkiN3RzHgP9cq/tensor-transformer-variants-are-surprisingly-performant</a></span></span></span> 的初步实验表明，用 Bilinear Attention 替换 Softmax Attention 会带来相当明显的性能损失。一个直观解释是二者使用了不同阶数的 kernel：如果两个 branch 的维度都是 \(d_h\)，那么 \(\phi(\bm q)=\bm q_1\otimes\bm q_2\in\mathbb R^{d_h^2}\)，对应一个有限维的二阶 feature map；而 \(\exp(\bm q^\top\bm k)\) 经过泰勒展开后，可以解释为一个无限维 kernel。</p>
+<p>但 polynomial degree 可能并不是这里最关键的区别。与 Bilinear FFN 类似，上一层的表示本身已经可以是输入的高阶函数，继续叠加 Bilinear Attention 仍会不断提高整个网络能够形成的 interaction 阶数。Attention 里真正更重要的，是 Softmax 在每一层施加的 routing 机制。</p>
+<p>为了看清这一点，先把标准 Softmax Attention 写成逐位置的形式。设 \(i\) 表示 query 位置，\(j\) 和 \(\ell\) 表示 key 位置，\(\bm v_j\) 是 \(\bm V\) 的第 \(j\) 行，并记 query-key logit 为 \(s_{ij}=\bm q_i^\top\bm k_j\)。忽略常见的 \(1/\sqrt{d_h}\) 缩放后，有</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\bm y_i=\frac{\sum_j \exp(s_{ij})\bm v_j}{\sum_\ell \exp(s_{i\ell})}=\sum_j p_{ij}\bm v_j,\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>其中</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[p_{ij}=\frac{\exp(s_{ij})}{\sum_\ell\exp(s_{i\ell})},\qquad\sum_j p_{ij}=1.\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>可以看出，Softmax weight 不只由第 \(i\) 个 query 和第 \(j\) 个 key 决定，还取决于其余 keys 提供了哪些竞争项。而 Bilinear Attention 则直接使用 dot-product similarity，而没有跨 key 的 normalization。</p>
+<p>这会直接改变 token 之间的竞争方式。对于 Softmax Attention，任意两个 key 位置 \(j\) 和 \(\ell\) 的相对权重满足</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\frac{p_{ij}}{p_{i\ell}}=\exp(s_{ij}-s_{i\ell}).\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>logit 上有限的差异经过指数映射后可以变成悬殊的权重比，因此 Softmax 很容易形成尖锐的选择分布。Bilinear Attention 则不天然提供这种 exponential sharpening，且 \(\bm A_{ij}\) 可以为负，\(\sum_j\bm A_{ij}\) 也不固定为 \(1\)，所以输出尺度还会直接受到 query/key norm、score distribution 和序列长度的影响。</p>
+<p>而今天很多前沿模型采用的线性注意力 (GDN/KDA) kernel 其实是更低阶的直接映射，复杂度比这里的 Bilinear Attention 还要更低。那么既然更简单的线性注意力能 scale 上去，没有道理表达能力更强的 Bilinear Attention 反而不行，笔者想到前沿模型往往是把线性注意力和全注意力在深度上面做混合，也许这里的实验中只用 Bilinear Attention 相比 Softmax Attention 的性能下降，并不是因为 Bilinear Attention 本身不够强，而是缺少了 hybrid 的设计。</p>
+<h2 id="3-从-hybrid-attention-到-hybrid-ffn">3. 从 Hybrid Attention 到 Hybrid FFN<a class="heading-anchor" href="#3-从-hybrid-attention-到-hybrid-ffn" aria-label="跳转到本节">#</a></h2>
+<p>现有前沿模型已经给出了一种解法，并不要求 Linear Attention 完全替代 Full Attention，而是在层数上做 hybrid. 一种常见配置是让 Linear Attention 与 Full Attention 的层数比例达到 \(3:1\)，甚至让 Linear Attention 占比更高。大多数层使用便宜的 recurrent state 负责信息传播，每隔若干层插入一次 Full Attention，补充精确的 token selection 和全局交互。实践已经说明，受限模块可以占据绝大多数层，只要模型中仍然保留少量表达能力完整的路径。</p>
+<p>同样的思路也可以搬到 FFN. 从 SwiGLU 切换到 Bilinear FFN，只是把 \(\operatorname{SiLU}(\bm a)\odot\bm b\) 换成 \(\bm a\odot\bm b\)，multiplicative skeleton 仍然完整保留，实验中的 gap 也比 Attention 一侧更小。因此进一步地，是否能让大部分 FFN 使用 Bilinear map，再保留少量 SwiGLU 作为非多项式的补充路径？</p>
+<p>最直接的方案当然也可以沿深度做 hybrid，例如每三层里用 Bilinear 来替代原本的 SwiGLU，然后再插入一层使用完整的 SwiGLU. 但 MoE 本身已经提供了另一种更自然的比例结构。</p>
+<h2 id="4-moe-天然适合做-hybrid-ffn">4. MoE 天然适合做 Hybrid FFN<a class="heading-anchor" href="#4-moe-天然适合做-hybrid-ffn" aria-label="跳转到本节">#</a></h2>
+<p>典型 MoE 中，每个 routed expert 本质上都是一个 SwiGLU FFN：</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[E_j(\bm x)=\bm W_{o,j}\left[\operatorname{SiLU}(\bm W_{1,j}\bm x)\odot\bm W_{2,j}\bm x\right].\]
+<p>现有的 MoE 与普通 dense FFN 的不同之处在于，它天然把计算拆成两类：数量很多但每个 token 只激活少数的 routed experts，以及数量很少但对所有 token 始终激活的 shared experts. 这恰好对应 hybrid Attention 中“大量受限路径 + 少量完整路径”的结构，只不过比例不再沿层数划分，而是在同一层的不同 expert 之间划分。</p>
+<p>由于 MoE 的绝大多数参数都位于 routed FFN 中，一个直接的设计就是让大量 routed experts 使用 Bilinear FFN，而让少量 shared experts 保留 SwiGLU. 这样就可以在每一层中直接实现 hybrid 的比例，而不必沿深度做插入。</p>
+<p>这个结构还有一点不同：按层做 hybrid 时，一个 token 需要经过若干受限层后才会遇到 Full Attention；而在 MoE 版本中，每个 token 在每一层都同时经过 Bilinear Routed Experts 和 SwiGLU Shared Experts. 非多项式路径不是周期性出现，而是始终存在。</p>
+<p>从函数类角度，若所有模块都是 bilinear，整个网络更接近一个 polynomial system. 加入 SwiGLU shared expert，则相当于每层都保留一条经过 \(\operatorname{SiLU}(\bm W\bm x)\) 的 non-polynomial path，模型因而不再局限于纯 polynomial composition.</p>
+<h2 id="5-会有什么收益">5. 会有什么收益？<a class="heading-anchor" href="#5-会有什么收益" aria-label="跳转到本节">#</a></h2>
+<p>回到最初的系统动机，把 SwiGLU 换成 Bilinear FFN 并不会直接减少参数量。两个输入 projection 和一个输出 projection 仍然存在，主要 GEMM 的形状也没有改变；如果只看参数量和通常的 FLOPs 统计，这次替换省下的只是 SiLU 对应的逐元素运算。</p>
+<p>但 FLOPs 并不等于实际运行时间。它无法完整反映访存、kernel launch，以及 GEMM 与后处理算子之间的流水线停顿。这个差异在细粒度 MoE 中尤其可能被放大：单个 expert 的 GEMM 规模较小，低精度矩阵乘法又已经得到高度优化，此时 post-GEMM 阶段的 SiLU 即使只占很少的理论 FLOPs，也可能形成不可忽略的 wall-clock 开销。去掉其中的指数和除法，正对应 DeepSeek-V4 在开头强调的系统收益。</p>
+<p>因此，需要把两类收益分开讨论。第一类是保持 expert 结构不变，仅仅去掉 SiLU 所带来的实现层收益：它可能缩短 post-GEMM pipeline，但既不改变 FFN 的渐近复杂度，也不减少 MoE 的参数量。第二类才是架构层收益，即利用 Bilinear FFN 更规整的乘法结构，进一步改变 expert 的 parameter/FLOPs trade-off；这一点不会由删除 activation 自动获得，还需要额外的结构设计。</p>
+<section class="article-citation"><h2 id="引用本文">引用本文<a class="heading-anchor" href="#引用本文" aria-label="跳转到本节">#</a></h2><pre><code>@online{transformer_wo_activation_2026,
+  title = {从 Linear Attention 到 Tensor Transformer：如果 Transformer 不再需要显式 Activation？},
+  author = {Haoyu Tang},
+  year = {2026},
+  url = {https://blog.himalalps.top/transformer-wo-activation}
+}</code></pre></section>
+<h2 id="参考文献">参考文献<a class="heading-anchor" href="#参考文献" aria-label="跳转到本节">#</a></h2><div id="refs" class="references csl-bib-body">
+  <div class="csl-entry" id="bib-deepseekai2026deepseekv4highlyefficientmilliontoken">
+    <div class="csl-left-margin">1. </div><div class="csl-right-inline">DeepSeek-AI. DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence. 2026. <a href="https://arxiv.org/abs/2606.19348" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2606.19348</a></div>
+  </div>
+  <div class="csl-entry" id="bib-tensor-transformer-variants">
+    <div class="csl-left-margin">2. </div><div class="csl-right-inline">Riggs L. Tensor-Transformer Variants are Surprisingly Performant. 2026. <a href="https://www.lesswrong.com/posts/hp9bvkiN3RzHgP9cq/tensor-transformer-variants-are-surprisingly-performant" target="_blank" rel="noopener noreferrer">https://www.lesswrong.com/posts/hp9bvkiN3RzHgP9cq/tensor-transformer-variants-are-surprisingly-performant</a></div>
+  </div>
+  <div class="csl-entry" id="bib-shazeer2020gluvariantsimprovetransformer">
+    <div class="csl-left-margin">3. </div><div class="csl-right-inline">Shazeer N. GLU Variants Improve Transformer. 2020. <a href="https://arxiv.org/abs/2002.05202" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2002.05202</a></div>
+  </div>
+</div>
+<script type="text/javascript">(function() {
+  var s = document.createElement('script');
+  s.src = 'https://giscus.app/client.js';
+  s.dataset.repo = 'himalalps/blog'; s.dataset.repoId = 'R_kgDORl6gRw';
+  s.dataset.category = 'Announcements'; s.dataset.categoryId = 'DIC_kwDORl6gR84DEfeQ';
+  s.dataset.mapping = 'pathname'; s.dataset.strict = '0'; s.dataset.reactionsEnabled = '1';
+  s.dataset.emitMetadata = '0'; s.dataset.inputPosition = 'top';
+  s.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'noborder_dark' : 'noborder_light';
+  s.dataset.lang = 'zh-CN'; s.dataset.loading = 'lazy'; s.crossOrigin = 'anonymous'; s.async = true;
+  document.currentScript.parentNode.insertBefore(s, document.currentScript.nextSibling);
+})();</script><script type="text/javascript">(() => {
+  const getTheme = () => document.documentElement.dataset.theme === 'dark' ? 'noborder_dark' : 'noborder_light';
+  const update = () => { const frame = document.querySelector('.giscus-frame');
+    if (frame) frame.contentWindow.postMessage({ giscus: { setConfig: { theme: getTheme() } } }, 'https://giscus.app'); };
+  new MutationObserver(update).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  new MutationObserver(update).observe(document.body, { childList: true, subtree: true }); update();
+})();</script> </article>  </main> <footer data-astro-cid-sckkx6r4> <div class="footer-content" data-astro-cid-sckkx6r4> <p data-astro-cid-sckkx6r4>&copy; 2026 Vibe</p> <a href="https://github.com/himalalps/blog" class="github-link" title="GitHub 仓库" aria-label="GitHub 仓库" target="_blank" rel="noreferrer" data-astro-cid-sckkx6r4> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" data-astro-cid-sckkx6r4> <path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.74.08-.74 1.2.09 1.84 1.23 1.84 1.23 1.07 1.83 2.81 1.3 3.5.99.11-.77.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.6-2.8 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.69.83.57A12 12 0 0 0 12 .5Z" data-astro-cid-sckkx6r4></path> </svg> </a> <a href="https://himalalps.top" class="home-link" title="返回主站" aria-label="返回主站" target="_blank" rel="noreferrer" data-astro-cid-sckkx6r4> <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-sckkx6r4> <path d="m3 10 9-7 9 7" data-astro-cid-sckkx6r4></path> <path d="M5 9.5V21h14V9.5" data-astro-cid-sckkx6r4></path> <path d="M9 21v-6h6v6" data-astro-cid-sckkx6r4></path> </svg> </a> <a href="/rss.xml" class="rss-link" title="RSS Feed" data-astro-cid-sckkx6r4> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-sckkx6r4> <path d="M4 11a9 9 0 0 1 9 9" data-astro-cid-sckkx6r4></path> <path d="M4 4a16 16 0 0 1 16 16" data-astro-cid-sckkx6r4></path> <circle cx="5" cy="19" r="1" data-astro-cid-sckkx6r4></circle> </svg> </a> </div> </footer>  <!-- Copy code functionality -->     </body> </html> 
