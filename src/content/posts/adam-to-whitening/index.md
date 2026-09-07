@@ -28,7 +28,7 @@ $$
 $$
 \bm P=\bm H^{-1/2},\qquad \bm H=\mathbb E[\bm g\bm g^\top],
 $$
-由于 $\bm H$ 是梯度 covariance，它天然是对称半正定矩阵。为了让通常意义下的 inverse square root 有定义，下面先假设 $\bm H\succ0$；如果 $\bm H$ 存在退化方向，实际实现中通常对它加入一个很小的 damping，使用 $(\bm H+\varepsilon \bm I)^{-1/2}$。在这个假设下，$\bm P$ 也是对称正定矩阵，即 $\bm P\succ0$.
+由于 $\bm H$ 是梯度二阶矩，它天然是对称半正定矩阵。为了让通常意义下的 inverse square root 有定义，下面先假设 $\bm H\succ0$；如果 $\bm H$ 存在退化方向，实际实现中通常加入 damping，使用 $(\bm H+\kappa\bm I)^{-1/2}$，其中 $\kappa>0$，具体作用会在第 9 节末尾说明。在这个假设下，$\bm P$ 也是对称正定矩阵，即 $\bm P\succ0$.
 
 此时参数更新变成
 $$
@@ -241,6 +241,16 @@ $$
 可见它正好匹配负的 AIRM natural-gradient direction。
 
 从严格几何推导看，$\bm A=\bm I-\frac{\eta}{2}(\bm C-\bm I)$ 是与 AIRM natural gradient 一阶匹配的 congruence update；而从 matrix-function 角度看，它又恰好是 $C^{-\eta/2}$ 在 $C\approx I$ 附近的一阶近似。
+
+前面的推导都假设 $\bm H\succ0$。但实际的梯度二阶矩可能只有半正定性：如果某些方向始终没有梯度分量，$\bm H$ 就会存在零特征值。此时，对任何有限的正定矩阵 $\bm P$，都有 $\operatorname{rank}(\bm P\bm H\bm P)=\operatorname{rank}(\bm H)<d$，因此 $\bm P\bm H\bm P=\bm I$ 不可能成立。也就是说，原 whitening 目标没有可供迭代收敛到的有限正定解。这里说的是总体二阶矩 $\bm H$ 的退化，单步估计 $\bm C_t$ 的低秩本身并不意味着 $\bm H$ 不可逆。
+
+实践中需要将二阶矩替换为 $\bm H_\kappa=\bm H+\kappa\bm I\succ0$，其中 $\kappa>0$，相应的目标变成
+$$
+\bm P\bm H_\kappa\bm P=\bm I,
+\qquad
+\bm P_\kappa=(\bm H+\kappa\bm I)^{-1/2}.
+$$
+本文主要解释理论上的 whitening 关系和更新方向，因此其余公式暂时省略这一项，统一在 $\bm H\succ0$ 的假设下讨论。
 
 ## 10. 从两条路线回看 KL-Root-Kron
 
