@@ -19,42 +19,50 @@ DeepSeek-V4 报告 [@deepseekai2026deepseekv4highlyefficientmilliontoken] 里有
 
 ## 1. Bilinear FFN：去除 SiLU 的 SwiGLU
 
-先来看 Tensor Transformer 对 FFN 做的改动。现代 LLM 中常见的 SwiGLU 可以写成
+先来看 Tensor Transformer 对 FFN 做的改动。本文统一使用行向量，线性投影的权重矩阵右乘。设输入 $\bm x\in\mathbb R^{1\times d}$，FFN 的 intermediate size 为 $m$，输出维度为 $d_{\mathrm{out}}$；通常 Transformer 中 $d_{\mathrm{out}}=d$. 现代 LLM 中常见的 SwiGLU 可以写成
 $$
-\operatorname{SwiGLU}(\bm x)=\bm W_o\left[\operatorname{SiLU}(\bm W_g\bm x)\odot\bm W_u\bm x\right].
+\operatorname{SwiGLU}(\bm x)=\left[\operatorname{SiLU}(\bm x\bm W_g)\odot\bm x\bm W_u\right]\bm W_d.
 $$
-其中 $\bm W_g$ 对应 gate branch，$\bm W_u$ 对应 up branch. Tensor Transformer 使用的 Bilinear FFN 则直接去掉 SiLU
+其中 $\bm W_g,\bm W_u\in\mathbb R^{d\times m}$ 分别对应 gate branch 和 up branch，$\bm W_d\in\mathbb R^{m\times d_{\mathrm{out}}}$ 是输出的 down projection，$\odot$ 表示逐元素乘积。 Tensor Transformer 使用的 Bilinear FFN 则直接去掉 SiLU
 $$
-\operatorname{Bilinear}(\bm x)=\bm W_o\left[(\bm W_1\bm x)\odot(\bm W_2\bm x)\right].
+\operatorname{Bilinear}(\bm x)=\left[(\bm x\bm W_1)\odot(\bm x\bm W_2)\right]\bm W_d.
 $$
-看上去只是少算了一个 $\operatorname{SiLU}$，但从函数形式上看这却是一个很激进的改动：整个 FFN 不再包含任何显式的非多项式激活函数. 笔者看到这里的第一反应是，这不就退化成线性层了吗？
+这里 $\bm W_1,\bm W_2\in\mathbb R^{d\times m}$。看上去只是少算了一个 $\operatorname{SiLU}$，但从函数形式上看这却是一个很激进的改动：整个 FFN 不再包含任何显式的非多项式激活函数. 笔者看到这里的第一反应是，这不就退化成线性层了吗？
 
-答案其实是否定的。虽然 $\bm W_1\bm x$ 和 $\bm W_2\bm x$ 都是 $\bm x$ 的线性函数，但二者的逐元素乘积是二次函数。设 FFN 的 intermediate size 为 $m$，对于第 $k$ 个中间维度有
-$$
-(\bm W_1\bm x)_k(\bm W_2\bm x)_k=\sum_{i,j}(\bm W_1)_{ki}(\bm W_2)_{kj}\bm x_i\bm x_j.
-$$
-进一步考虑 Bilinear FFN 输出 $\bm y$ 的第 $l$ 个分量。用 $\bm W_o$ 对上述 $m$ 个中间维度加权求和，有
+答案其实是否定的。虽然 $\bm x\bm W_1$ 和 $\bm x\bm W_2$ 都是 $\bm x$ 的线性函数，但二者的逐元素乘积是二次函数。用 $i,j=1,\ldots,d$ 表示输入维度，$k=1,\ldots,m$ 表示中间维度，对于第 $k$ 个中间分量有
 $$
 \begin{aligned}
-\bm y_l&=\sum_{k=1}^{m}(\bm W_o)_{lk}(\bm W_1\bm x)_k(\bm W_2\bm x)_k\\
-&=\sum_{i,j}\left[\sum_{k=1}^{m}(\bm W_o)_{lk}(\bm W_1)_{ki}(\bm W_2)_{kj}
+(\bm x\bm W_1)_k(\bm x\bm W_2)_k
+&=\left[\sum_{i=1}^{d}\bm x_i(\bm W_1)_{ik}\right]\left[\sum_{j=1}^{d}\bm x_j(\bm W_2)_{jk}\right]\\
+&=\sum_{i,j}(\bm W_1)_{ik}(\bm W_2)_{jk}\bm x_i\bm x_j.
+\end{aligned}
+$$
+进一步考虑 Bilinear FFN 输出 $\bm y\in\mathbb R^{1\times d_{\mathrm{out}}}$ 的第 $l$ 个分量，其中 $l=1,\ldots,d_{\mathrm{out}}$。用 $\bm W_d$ 对上述 $m$ 个中间维度加权求和，有
+$$
+\begin{aligned}
+\bm y_l&=\sum_{k=1}^{m}(\bm W_d)_{kl}(\bm x\bm W_1)_k(\bm x\bm W_2)_k\\
+&=\sum_{i,j}\left[\sum_{k=1}^{m}(\bm W_d)_{kl}(\bm W_1)_{ik}(\bm W_2)_{jk}
 \right]\bm x_i\bm x_j\\
 &=\sum_{i,j}\bm T_{lij}\bm x_i\bm x_j,
 \end{aligned}
 $$
-其中 $\bm T_{lij}=\sum_{k=1}^{m}(\bm W_o)_{lk}(\bm W_1)_{ki}(\bm W_2)_{kj}\in\mathbb R^{d_{\mathrm{out}}\times d\times d}$ 是一个三阶 tensor，三个矩阵 $\bm W_o,\bm W_1,\bm W_2$ 实际上给出了 $\bm T$ 的一个低秩分解。Bilinear FFN 因而是经过低秩参数化的 quadratic map，去掉 SiLU 并未把 MLP 变成一个单线性层，而是把用这里的逐元素积实现了二阶的非线性映射，而多层叠加后也可以因而产生更高阶的多项式交互。
+这里定义三阶 tensor $\bm T\in\mathbb R^{d_{\mathrm{out}}\times d\times d}$，其分量为
+$$
+\bm T_{lij}=\sum_{k=1}^{m}(\bm W_d)_{kl}(\bm W_1)_{ik}(\bm W_2)_{jk}.
+$$
+三个矩阵 $\bm W_d,\bm W_1,\bm W_2$ 实际上给出了 $\bm T$ 的一个低秩分解。Bilinear FFN 因而是经过低秩参数化的 quadratic map，去掉 SiLU 并未把 MLP 变成一个单线性层，而是用这里的逐元素积实现了二阶的非线性映射，而多层叠加后也可以因而产生更高阶的多项式交互。
 
 从这个角度再看 SwiGLU，会发现其中本来就同时包含两种非线性来源：SiLU 提供显式的激活函数，而 gate 与 up branch 的逐元素乘法提供隐式乘性非线性。这其实在六年前就已经被 Noam Shazeer 进行过对比实验 [@shazeer2020gluvariantsimprovetransformer]，在 Loss 以及下游任务上相比最优的带激活函数的 GLU，这种 Bilinear FFN 也只是差了一些，总体上是 GEGLU≈SwiGLU>ReGLU≈Bilinear>GLU>普通 ReLU/GELU/Swish FFN. 但值得注意的是，当时的实验还没有进入 MoE 时代，整体规模也还比较小。
 
 经典 universal approximation theorem 告诉我们，对于标准单隐藏层前馈网络，在适当条件下，非多项式 activation 与其稠密函数逼近能力密切相关。SiLU、ReLU 和 GELU 都属于这里的非多项式 activation.
 
-Bilinear FFN 显然不同。单层映射 $\bm W_o[(\bm W_1\bm x)\odot(\bm W_2\bm x)]$ 严格来说只是二次多项式，因此固定为单层时，它当然不具有普通非多项式 activation MLP 那样的函数族。但这并不意味着深层网络也只能表达低阶，如果每层都是二次映射，在暂时忽略 residual 和 normalization 的情况下，组合起来会使这里的阶数随深度快速增长：第 $1$ 层最高为 $2$ 阶，第 $2$ 层最高为 $4$ 阶，到第 $L$ 层则可以达到 $2^L$ 阶。
+Bilinear FFN 显然不同。单层映射 $[(\bm x\bm W_1)\odot(\bm x\bm W_2)]\bm W_d$ 严格来说只是二次多项式，因此固定为单层时，它当然不具有普通非多项式 activation MLP 那样的函数族。但这并不意味着深层网络也只能表达低阶，如果每层都是二次映射，在暂时忽略 residual 和 normalization 的情况下，组合起来会使这里的阶数随深度快速增长：第 $1$ 层最高为 $2$ 阶，第 $2$ 层最高为 $4$ 阶，到第 $L$ 层则可以达到 $2^L$ 阶。
 
 传统 MLP 直接使用非线性激活，通过增加 width 就可以构造复杂函数；Bilinear network 则更多依靠 $\bm x_i\bm x_j$ 及其深层组合所产生的高阶 interaction. 当前一些模型的深度已经达到几十上百，那么这么深的一个模型中如果换用 Bilinear FFN 其实也已经可以产生非常丰富的高阶多项式。
 
 ## 2. Bilinear Attention：基于二阶 Map 的 Linear Attention
 
-Tensor Transformer 还把这种构造推广到了 Attention 中。先考虑标准 Attention
+Tensor Transformer 还把这种构造推广到了 Attention 中。设 $\bm Q,\bm K,\bm V$ 分别按行存放各个 token 的 query、key 和 value。先考虑标准 Attention
 $$
 \bm Y=\operatorname{Softmax}(\bm Q\bm K^\top)\bm V,
 $$
@@ -66,24 +74,24 @@ $$
 $$
 \begin{aligned}
 \bm A_{ij}&=(\bm Q_1\bm K_1^\top)_{ij}(\bm Q_2\bm K_2^\top)_{ij}\\
-&=(\bm q_{1,i}^\top\bm k_{1,j})(\bm q_{2,i}^\top\bm k_{2,j}),
+&=(\bm q_{1,i}\bm k_{1,j}^\top)(\bm q_{2,i}\bm k_{2,j}^\top),
 \end{aligned}
 $$
-这里 $\bm q_{1,i}$ 是 $\bm Q_1$ 的第 $i$ 行，$\bm k_{1,j}$ 是 $\bm K_1$ 的第 $j$ 行，$\bm q_{2,i}$ 和 $\bm k_{2,j}$ 同理. 这和 Bilinear FFN 的结构完全一致：每个 branch 本身都是线性的，二者相乘后则产生二阶 interaction. 利用 Kronecker product 恒等式
+这里 $\bm q_{1,i}$ 是 $\bm Q_1$ 的第 $i$ 行，$\bm k_{1,j}$ 是 $\bm K_1$ 的第 $j$ 行，$\bm q_{2,i}$ 和 $\bm k_{2,j}$ 同理. 这和 Bilinear FFN 的结构完全一致：每个 branch 本身都是线性的，二者相乘后则产生二阶 interaction. 对于行向量 $\bm a,\bm b,\bm c,\bm d$，其中 $\bm a$ 与 $\bm b$ 同维、$\bm c$ 与 $\bm d$ 同维，利用 Kronecker product 恒等式
 $$
-(\bm a^\top\bm b)(\bm c^\top\bm d)=(\bm a\otimes\bm c)^\top(\bm b\otimes\bm d),
+(\bm a\bm b^\top)(\bm c\bm d^\top)=(\bm a\otimes\bm c)(\bm b\otimes\bm d)^\top,
 $$
 可以为两个 branch 的组合定义二阶 feature map
 $$
 \phi(\bm q)=\bm q_1\otimes\bm q_2,\qquad\phi(\bm k)=\bm k_1\otimes\bm k_2,
 $$
-这样就得到 $\bm A_{ij}=\phi(\bm q_i)^\top\phi(\bm k_j)$，进而有 $\bm A=\bm\Phi(\bm Q)\bm\Phi(\bm K)^\top$，这是标准的 Linear Attention 形式。
+这样就得到 $\bm A_{ij}=\phi(\bm q_i)\phi(\bm k_j)^\top$，将各位置的 feature map 按行堆叠为 $\bm\Phi(\bm Q)$ 和 $\bm\Phi(\bm K)$，进而有 $\bm A=\bm\Phi(\bm Q)\bm\Phi(\bm K)^\top$，这是标准的 Linear Attention 形式。
 
-不过，[@tensor-transformer-variants] 的初步实验表明，用 Bilinear Attention 替换 Softmax Attention 会带来相当明显的性能损失。一个直观解释是二者使用了不同阶数的 kernel：如果两个 branch 的维度都是 $d_h$，那么 $\phi(\bm q)=\bm q_1\otimes\bm q_2\in\mathbb R^{d_h^2}$，对应一个有限维的二阶 feature map；而 $\exp(\bm q^\top\bm k)$ 经过泰勒展开后，可以解释为一个无限维 kernel。
+不过，[@tensor-transformer-variants] 的初步实验表明，用 Bilinear Attention 替换 Softmax Attention 会带来相当明显的性能损失。一个直观解释是二者使用了不同阶数的 kernel：如果两个 branch 的维度都是 $d_h$，那么 $\phi(\bm q)=\bm q_1\otimes\bm q_2\in\mathbb R^{1\times d_h^2}$，对应一个有限维的二阶 feature map；而 $\exp(\bm q\bm k^\top)$ 经过泰勒展开后，可以解释为一个无限维 kernel。
 
 但 polynomial degree 可能并不是这里最关键的区别。与 Bilinear FFN 类似，上一层的表示本身已经可以是输入的高阶函数，继续叠加 Bilinear Attention 仍会不断提高整个网络能够形成的 interaction 阶数。Attention 里真正更重要的，是 Softmax 在每一层施加的 routing 机制。
 
-为了看清这一点，先把标准 Softmax Attention 写成逐位置的形式。设 $i$ 表示 query 位置，$j$ 和 $\ell$ 表示 key 位置，$\bm v_j$ 是 $\bm V$ 的第 $j$ 行，并记 query-key logit 为 $s_{ij}=\bm q_i^\top\bm k_j$。忽略常见的 $1/\sqrt{d_h}$ 缩放后，有
+为了看清这一点，先把标准 Softmax Attention 写成逐位置的形式。设 $i$ 表示 query 位置，$j$ 和 $\ell$ 表示 key 位置，$\bm v_j$ 是 $\bm V$ 的第 $j$ 行，并记 query-key logit 为 $s_{ij}=\bm q_i\bm k_j^\top$。忽略常见的 $1/\sqrt{d_h}$ 缩放后，有
 $$
 \bm y_i=\frac{\sum_j \exp(s_{ij})\bm v_j}{\sum_\ell \exp(s_{i\ell})}=\sum_j p_{ij}\bm v_j,
 $$
@@ -113,7 +121,7 @@ logit 上有限的差异经过指数映射后可以变成悬殊的权重比，�
 
 典型 MoE 中，每个 routed expert 本质上都是一个 SwiGLU FFN：
 $$
-E_j(\bm x)=\bm W_{o,j}\left[\operatorname{SiLU}(\bm W_{1,j}\bm x)\odot\bm W_{2,j}\bm x\right].
+E_j(\bm x)=\left[\operatorname{SiLU}(\bm x\bm W_{1,j})\odot\bm x\bm W_{2,j}\right]\bm W_{d,j}.
 $$
 
 现有的 MoE 与普通 dense FFN 的不同之处在于，它天然把计算拆成两类：数量很多但每个 token 只激活少数的 routed experts，以及数量很少但对所有 token 始终激活的 shared experts. 这恰好对应 hybrid Attention 中“大量受限路径 + 少量完整路径”的结构，只不过比例不再沿层数划分，而是在同一层的不同 expert 之间划分。
@@ -122,7 +130,7 @@ $$
 
 这个结构还有一点不同：按层做 hybrid 时，一个 token 需要经过若干受限层后才会遇到 Full Attention；而在 MoE 版本中，每个 token 在每一层都同时经过 Bilinear Routed Experts 和 SwiGLU Shared Experts. 非多项式路径不是周期性出现，而是始终存在。
 
-从函数类角度，若所有模块都是 bilinear，整个网络更接近一个 polynomial system. 加入 SwiGLU shared expert，则相当于每层都保留一条经过 $\operatorname{SiLU}(\bm W\bm x)$ 的 non-polynomial path，模型因而不再局限于纯 polynomial composition.
+从函数类角度，若所有模块都是 bilinear，整个网络更接近一个 polynomial system. 加入 SwiGLU shared expert，则相当于每层都保留一条经过 $\operatorname{SiLU}(\bm x\bm W)$ 的 non-polynomial path，模型因而不再局限于纯 polynomial composition.
 
 ## 5. 会有什么收益？
 
