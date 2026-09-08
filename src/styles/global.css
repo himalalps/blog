@@ -369,15 +369,24 @@ body:has(.post-content) footer {
   margin: 1rem auto;
 }
 
-/* Regular article links use the same subtle treatment as bibliography links. */
-.post-content a:not(.cite-ref):not(.heading-anchor) {
-  text-decoration: underline dotted;
-  text-underline-offset: 3px;
+/* Share one dot pattern across text links and SVG equation references.
+   Native dotted text decorations and dotted borders use different spacing. */
+.post-content a:not(.cite-ref):not(.heading-anchor):not(svg a),
+.post-content mjx-container[jax="SVG"]:not([display="true"]):has(a[href^="#mjx-eqn"]) {
+  text-decoration: none;
+  background-image: radial-gradient(circle at 0.5px 0.5px, currentColor 0.5px, transparent 0.6px);
+  background-size: 3px 1px;
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  padding-bottom: 3px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
-.post-content a:not(.cite-ref):not(.heading-anchor):hover {
+.post-content a:not(.cite-ref):not(.heading-anchor):not(svg a):hover,
+.post-content mjx-container[jax="SVG"]:not([display="true"]):has(a[href^="#mjx-eqn"]):hover {
   color: var(--accent-color);
-  text-decoration: underline solid;
+  background-image: linear-gradient(currentColor, currentColor);
 }
 
 /* Blockquotes */
@@ -496,13 +505,6 @@ body:has(.post-content) footer {
 
 .post-content .cite-pop a {
   overflow-wrap: anywhere;
-  text-decoration: underline dotted;
-  text-underline-offset: 3px;
-}
-
-.post-content .cite-pop a:hover {
-  color: var(--accent-color);
-  text-decoration: underline solid;
 }
 
 /* Bibliography */
@@ -527,13 +529,6 @@ body:has(.post-content) footer {
 
 .post-content .references a {
   overflow-wrap: anywhere;
-  text-decoration: underline dotted;
-  text-underline-offset: 3px;
-}
-
-.post-content .references a:hover {
-  color: var(--accent-color);
-  text-decoration: underline solid;
 }
 
 .post-content .references .csl-entry.is-citation-target {
@@ -558,6 +553,18 @@ body:has(.post-content) footer {
 
 .post-content mjx-container {
   font-size: 1.05em;
+}
+
+/* MathJax draws link text as SVG paths, so ordinary text-decoration does
+   not underline it and its default fill/stroke makes it blue. */
+.post-content mjx-container[jax="SVG"] svg a[href] {
+  color: inherit;
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+.post-content mjx-container[jax="SVG"] svg a[href]:hover {
+  color: var(--accent-color);
 }
 
 .post-content mjx-container[display="true"] {

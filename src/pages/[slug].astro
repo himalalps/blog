@@ -20,17 +20,41 @@ const { post } = Astro.props;
 const { Content } = await render(post);
 const { title, description, lang, cover, coverAlt } = post.data;
 const { date } = toPostSummary(post);
+const productionHostname = Astro.site?.hostname;
 ---
 
 <Layout title={`${title} - Vibe`} description={description} lang={lang}>
   <article class="post-content">
-    <p class="date">{date}</p>
+    <p class="date">
+      <time datetime={date}>{date}</time>
+      <span id="busuanzi_container_page_pv" style="display: none;">
+        <span id="busuanzi_value_page_pv"></span>次阅读
+      </span>
+    </p>
     {cover && <Image class="post-cover" src={cover} alt={coverAlt ?? title} />}
     <Content />
   </article>
+  {import.meta.env.PROD && productionHostname && (
+    <script is:inline define:vars={{ productionHostname }}>
+      // Local previews and alternate deployment domains must not send counts.
+      if (window.location.hostname === productionHostname && !window.location.port) {
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js';
+        document.body.appendChild(script);
+      }
+    </script>
+  )}
 </Layout>
 
 <style>
+  .date {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1rem;
+  }
+
   .post-cover {
     display: block;
     width: 100%;
