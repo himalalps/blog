@@ -1,0 +1,413 @@
+<!DOCTYPE html><html lang="zh-CN" data-astro-cid-sckkx6r4> <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script>
+      (() => {
+        const themeKey = 'vibe-theme';
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+        try {
+          const savedTheme = window.localStorage.getItem(themeKey);
+          document.documentElement.dataset.theme = savedTheme === 'dark' || savedTheme === 'light'
+            ? savedTheme
+            : systemTheme;
+        } catch {
+          document.documentElement.dataset.theme = systemTheme;
+        }
+      })();
+    </script><script>
+      window.MathJax = {
+        tex: {
+          tags: 'ams',
+          packages: { '[+]': ['ams'] },
+          macros: {
+            bm: ['\\boldsymbol{#1}', 1],
+            R: '\\mathbb{R}',
+            E: '\\mathbb{E}',
+            argmax: '\\operatorname*{arg\\,max}',
+            argmin: '\\operatorname*{arg\\,min}',
+            on: ['\\operatorname{#1}', 1],
+            dff: 'd_{\\mathrm{ff}}',
+          },
+        },
+        svg: { fontCache: 'global' },
+      };
+    </script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script><title>模型训练的初始化 - Vibe</title><meta name="description" content="从二阶矩传播推导 LeCun、Xavier 与 Kaiming 初始化，分析 Transformer 的残差缩放，并用特征变化与谱范数解释 μP 的初始化和学习率如何随模型宽度变化。"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="alternate" type="application/rss+xml" href="/rss.xml" title="Vibe 博客"><style>.date[data-astro-cid-yvbahnfj]{display:flex;flex-wrap:wrap;align-items:baseline;gap:.5rem 1rem}.post-cover[data-astro-cid-yvbahnfj]{display:block;width:100%;height:auto;margin-bottom:2.5rem;border:2px solid var(--border-color)}
+</style>
+<link rel="stylesheet" href="/_astro/_slug_.Bvvccj0q.css"><script type="module">(()=>{const t=e=>{const o=e.parentElement;if(!o)return;e.dataset.fitMarginBottom||(e.dataset.fitMarginBottom=getComputedStyle(e).marginBottom);const a=parseFloat(e.dataset.fitMarginBottom)||0;e.style.transform="none",e.style.width="max-content",e.style.marginBottom="";const s=o.clientWidth,r=e.scrollWidth;if(!s||r<=s)return;const l=s/r;e.style.transform=`scale(${l})`,e.style.width=`${r}px`;const h=e.offsetHeight*(1-l);e.style.marginBottom=`${a-h}px`},n=document.querySelectorAll(".post-content .table.fit > table");if(n.forEach(e=>t(e)),typeof ResizeObserver<"u"){const e=new ResizeObserver(o=>{o.forEach(({target:a})=>{const s=a.querySelector(":scope > table");s&&t(s)})});n.forEach(o=>e.observe(o.parentElement))}else window.addEventListener("resize",()=>n.forEach(e=>t(e)))})();const c=()=>{if(document.querySelectorAll(".references .csl-entry.is-citation-target").forEach(e=>{e.classList.remove("is-citation-target")}),!window.location.hash.startsWith("#bib-"))return;let t=window.location.hash.slice(1);try{t=decodeURIComponent(t)}catch{}const n=document.getElementById(t);n?.matches(".references .csl-entry")&&n.classList.add("is-citation-target")};document.addEventListener("click",t=>{if(!window.location.hash.startsWith("#bib-")||!(t.target instanceof Element))return;const n=t.target.closest("a[href]");n instanceof HTMLAnchorElement&&n.hash.startsWith("#bib-")||(window.history.replaceState(window.history.state,"",`${window.location.pathname}${window.location.search}`),c())});window.addEventListener("hashchange",c);c();const m="vibe-theme",i=document.querySelector("#theme-toggle"),d=()=>{if(!(i instanceof HTMLButtonElement))return;const t=document.documentElement.dataset.theme==="dark",n=t?"切换到浅色模式":"切换到深色模式";i.setAttribute("aria-label",n),i.setAttribute("aria-pressed",String(t)),i.title=n};i?.addEventListener("click",()=>{const t=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=t;try{window.localStorage.setItem(m,t)}catch{}d()});window.addEventListener("storage",t=>{t.key!==m||t.newValue!=="dark"&&t.newValue!=="light"||(document.documentElement.dataset.theme=t.newValue,d())});d();document.addEventListener("DOMContentLoaded",function(){const t=document.createElement("div");t.className="copy-notification",t.textContent="已复制",document.body.appendChild(t),document.querySelectorAll("pre.astro-code, .article-citation pre").forEach(e=>{e.style.cursor="pointer",e.title="点击复制",e.addEventListener("click",function(){const o=this.querySelector("code").textContent;navigator.clipboard.writeText(o).then(()=>{t.classList.add("show"),setTimeout(()=>{t.classList.remove("show")},2e3)})})})});
+</script></head> <body data-astro-cid-sckkx6r4> <header data-astro-cid-sckkx6r4> <nav data-astro-cid-sckkx6r4> <a href="/" class="logo" data-astro-cid-sckkx6r4>VIBE</a> <div class="search" data-astro-cid-sckkx6r4> <style>astro-island,astro-slot,astro-static-slot{display:contents}</style><script>(()=>{var e=async t=>{await(await t())()};(self.Astro||(self.Astro={})).load=e;window.dispatchEvent(new Event("astro:load"));})();;(()=>{var A=Object.defineProperty;var g=(i,o,a)=>o in i?A(i,o,{enumerable:!0,configurable:!0,writable:!0,value:a}):i[o]=a;var d=(i,o,a)=>g(i,typeof o!="symbol"?o+"":o,a);{let i={0:t=>m(t),1:t=>a(t),2:t=>new RegExp(t),3:t=>new Date(t),4:t=>new Map(a(t)),5:t=>new Set(a(t)),6:t=>BigInt(t),7:t=>new URL(t),8:t=>new Uint8Array(t),9:t=>new Uint16Array(t),10:t=>new Uint32Array(t),11:t=>1/0*t},o=t=>{let[l,e]=t;return l in i?i[l](e):void 0},a=t=>t.map(o),m=t=>typeof t!="object"||t===null?t:Object.fromEntries(Object.entries(t).map(([l,e])=>[l,o(e)]));class y extends HTMLElement{constructor(){super(...arguments);d(this,"Component");d(this,"hydrator");d(this,"hydrate",async()=>{var b;if(!this.hydrator||!this.isConnected)return;let e=(b=this.parentElement)==null?void 0:b.closest("astro-island[ssr]");if(e){e.addEventListener("astro:hydrate",this.hydrate,{once:!0});return}let c=this.querySelectorAll("astro-slot"),n={},h=this.querySelectorAll("template[data-astro-template]");for(let r of h){let s=r.closest(this.tagName);s!=null&&s.isSameNode(this)&&(n[r.getAttribute("data-astro-template")||"default"]=r.innerHTML,r.remove())}for(let r of c){let s=r.closest(this.tagName);s!=null&&s.isSameNode(this)&&(n[r.getAttribute("name")||"default"]=r.innerHTML)}let p;try{p=this.hasAttribute("props")?m(JSON.parse(this.getAttribute("props"))):{}}catch(r){let s=this.getAttribute("component-url")||"<unknown>",v=this.getAttribute("component-export");throw v&&(s+=` (export ${v})`),console.error(`[hydrate] Error parsing props for component ${s}`,this.getAttribute("props"),r),r}let u;await this.hydrator(this)(this.Component,p,n,{client:this.getAttribute("client")}),this.removeAttribute("ssr"),this.dispatchEvent(new CustomEvent("astro:hydrate"))});d(this,"unmount",()=>{this.isConnected||this.dispatchEvent(new CustomEvent("astro:unmount"))})}disconnectedCallback(){document.removeEventListener("astro:after-swap",this.unmount),document.addEventListener("astro:after-swap",this.unmount,{once:!0})}connectedCallback(){if(!this.hasAttribute("await-children")||document.readyState==="interactive"||document.readyState==="complete")this.childrenConnectedCallback();else{let e=()=>{document.removeEventListener("DOMContentLoaded",e),c.disconnect(),this.childrenConnectedCallback()},c=new MutationObserver(()=>{var n;((n=this.lastChild)==null?void 0:n.nodeType)===Node.COMMENT_NODE&&this.lastChild.nodeValue==="astro:end"&&(this.lastChild.remove(),e())});c.observe(this,{childList:!0}),document.addEventListener("DOMContentLoaded",e)}}async childrenConnectedCallback(){let e=this.getAttribute("before-hydration-url");e&&await import(e),this.start()}async start(){let e=JSON.parse(this.getAttribute("opts")),c=this.getAttribute("client");if(Astro[c]===void 0){window.addEventListener(`astro:${c}`,()=>this.start(),{once:!0});return}try{await Astro[c](async()=>{let n=this.getAttribute("renderer-url"),[h,{default:p}]=await Promise.all([import(this.getAttribute("component-url")),n?import(n):()=>()=>{}]),u=this.getAttribute("component-export")||"default";if(!u.includes("."))this.Component=h[u];else{this.Component=h;for(let f of u.split("."))this.Component=this.Component[f]}return this.hydrator=p,this.hydrate},e,this)}catch(n){console.error(`[astro-island] Error hydrating ${this.getAttribute("component-url")}`,n)}}attributeChangedCallback(){this.hydrate()}}d(y,"observedAttributes",["props"]),customElements.get("astro-island")||customElements.define("astro-island",y)}})();</script><astro-island uid="Z1C8KQn" prefix="v0" component-url="/_astro/Search.BIdnNo0W.js" component-export="default" renderer-url="/_astro/client.Cje-dOff.js" props="{&quot;posts&quot;:[1,[[0,{&quot;slug&quot;:[0,&quot;model-initialization&quot;],&quot;title&quot;:[0,&quot;模型训练的初始化&quot;],&quot;description&quot;:[0,&quot;从二阶矩传播推导 LeCun、Xavier 与 Kaiming 初始化，分析 Transformer 的残差缩放，并用特征变化与谱范数解释 μP 的初始化和学习率如何随模型宽度变化。&quot;],&quot;date&quot;:[0,&quot;2026-09-08&quot;],&quot;lang&quot;:[0,&quot;zh-CN&quot;]}],[0,{&quot;slug&quot;:[0,&quot;transformer-wo-activation&quot;],&quot;title&quot;:[0,&quot;从 Linear Attention 到 Tensor Transformer：如果 Transformer 不再需要显式 Activation？&quot;],&quot;description&quot;:[0,&quot;从 DeepSeek-V4 对 SwiGLU 开销的讨论出发，借助 Bilinear FFN、Linear Attention 与多项式函数族，分析 Transformer 是否需要显式激活函数。&quot;],&quot;date&quot;:[0,&quot;2026-09-03&quot;],&quot;lang&quot;:[0,&quot;zh-CN&quot;]}],[0,{&quot;slug&quot;:[0,&quot;adam-to-whitening&quot;],&quot;title&quot;:[0,&quot;从 Adam 到在线矩阵 Whitening&quot;],&quot;description&quot;:[0,&quot;从 Adam 的对角二阶矩出发，理解在线矩阵 Whitening、KL-Root-Kron 及其 Kronecker 实现。&quot;],&quot;date&quot;:[0,&quot;2026-09-01&quot;],&quot;lang&quot;:[0,&quot;zh-CN&quot;]}],[0,{&quot;slug&quot;:[0,&quot;moe-designs&quot;],&quot;title&quot;:[0,&quot;模型架构：1. MoE&quot;],&quot;description&quot;:[0,&quot;模型架构系列第一篇，围绕 MoE 的基本结构、SwiGLU 与细粒度专家设计，梳理共享专家、路由函数、负载均衡和专家并行等关键取舍。&quot;],&quot;date&quot;:[0,&quot;2026-08-30&quot;],&quot;lang&quot;:[0,&quot;zh-CN&quot;]}]]],&quot;baseUrl&quot;:[0,&quot;&quot;],&quot;data-astro-cid-sckkx6r4&quot;:[0,true]}" ssr="" client="load" opts="{&quot;name&quot;:&quot;Search&quot;,&quot;value&quot;:true}" await-children=""><div class="search-container" data-astro-cid-sckkx6r4="true" data-v-4b7212b7><input type="search" value="" placeholder="搜索文章..." aria-label="搜索博客文章" autocomplete="off" class="search-input" data-v-4b7212b7><!----></div><!--astro:end--></astro-island> </div> <div class="header-tools" data-astro-cid-sckkx6r4> <a href="/archive" class="archive-link" aria-label="文章归档" title="文章归档" data-astro-cid-sckkx6r4><span class="archive-icon" aria-hidden="true" data-astro-cid-sckkx6r4>▤</span></a> <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切换到深色模式" aria-pressed="false" title="切换到深色模式" data-astro-cid-sckkx6r4> <span class="theme-icon theme-icon-dark" aria-hidden="true" data-astro-cid-sckkx6r4>☾</span> <span class="theme-icon theme-icon-light" aria-hidden="true" data-astro-cid-sckkx6r4>☀</span> </button> </div> </nav> </header> <main data-astro-cid-sckkx6r4>  <article class="post-content" data-astro-cid-yvbahnfj> <p class="date" data-astro-cid-yvbahnfj> <time datetime="2026-09-08" data-astro-cid-yvbahnfj>2026-09-08</time> <span id="vercount_container_page_pv" style="display: none;" data-astro-cid-yvbahnfj> <span id="vercount_value_page_pv" data-astro-cid-yvbahnfj></span>次阅读
+</span> </p>  <h1 id="模型训练的初始化从-lecunxavierkaiming-到-mup">模型训练的初始化：从 LeCun、Xavier、Kaiming 到 \(\mu\)P</h1>
+<p>讨论 Transformer 初始化时，首先要区分三个问题：网络刚初始化时，信号能否正常传播；网络较深时，残差与归一化能否维持合理的尺度；模型变宽后，同一套训练超参数是否仍然对应相近的学习行为。</p>
+<p>LeCun、Xavier 和 Kaiming 初始化主要处理第一个问题。Transformer 的残差缩放和归一化可以处理第二个问题。\(\mu\)P（Maximal Update Parametrization）则把第三个问题纳入设计：它同时规定初始化、前向乘数和不同参数的学习率如何随宽度变化。</p>
+<h2 id="统一记号">统一记号<a class="heading-anchor" href="#统一记号" aria-label="跳转到本节">#</a></h2>
+<p>本文采用列向量约定，</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\bm x\in\mathbb R^{d_{\mathrm{in}}},\qquad
+\bm W\in\mathbb R^{d_{\mathrm{out}}\times d_{\mathrm{in}}},\qquad
+\bm y=\bm W\bm x\in\mathbb R^{d_{\mathrm{out}}},\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>\(\bm W\) 的行对应输出，列对应输入。如果要引入 bias 则写作 \(\bm y=\bm W\bm x+\bm b\)，其中 \(\bm b\in\mathbb R^{d_{\mathrm{out}}}\). 如果需要同时处理 \(T\) 个 token，就可以组合起来列向量排列 \(\bm X\in\mathbb R^{d_{\mathrm{in}}\times T}\)，于是 \(\bm Y=\bm W\bm X\).</p>
+<p>默认权重初始化各维度相互独立，且</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\mathbb E[\bm W_{li}]=0,\qquad
+\operatorname{Var}(\bm W_{li})=\sigma_W^2,\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>一般有三种采样方式，高斯分布、均匀分布、截断正态分布。若使用高斯分布，则 \(\bm W_{li}\sim\mathcal N(0,\sigma_W^2)\)，好处是采样结果多样，缺点是采样结果无界，一些绝对值过大可能不利于后续优化；均匀分布可以写成 \(U[-\sqrt3\sigma_W,\sqrt3\sigma_W]\)，好处是有界，但采样结果也比较单一。截断正态分布则是在正态分布采样基础上，只保留落在截断区间内的结果，如果落在外部则重新采样直到落在指定区间内。注意因为做了截断，所以方差会出现变化，需要根据截断区间来调整正态分布取的方差，当采用 2 倍标准差截断时，对应的比值为</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\gamma=\frac{\int_{-2}^{2}e^{-x^2/2}x^2\mathrm{d} x}{\int_{-2}^{2}e^{-x^2/2}\mathrm{d} x}\approx 0.773,\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>所以应该扩大标准差为 \(\sigma_W/\sqrt{\gamma}\approx1.294\sigma_W.\)</p>
+<p>一个权重的输入，可以是原始数据，也可以是上一层的隐藏表示。下文先假设 \(\bm x\) 与当前层的随机权重 \(\bm W\) 独立；对于各层权重独立初始化、没有权重共享的前馈网络，上一层的输出自然也满足独立条件。</p>
+<p>不妨先假设输入具有相同、有限且非零的二阶矩</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[0&#x3C;\mathbb E[\bm x_i^2]&#x3C;\infty,
+\qquad i=1,\ldots,d_{\mathrm{in}},\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>这里<strong>不要求输入零均值，也不要求各坐标相互独立或服从高斯分布</strong>。如果各输入坐标的二阶矩不同，也可以用它们的平均值来衡量输入尺度</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\frac1{d_{\mathrm{in}}}\sum_{i=1}^{d_{\mathrm{in}}}\mathbb E[\bm x_i^2]
+=\frac{\mathbb E\|\bm x\|_2^2}{d_{\mathrm{in}}}.\]
+<p>二阶矩与方差的关系为</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\mathbb E[\bm x_i^2]
+=\operatorname{Var}(\bm x_i)+\mathbb E[\bm x_i]^2.\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>只有均值为零时，两者才相等。零均值、单位方差的输入对应 \(\mathbb E[\bm x_i^2]=1\)，这自然很好，但并不是本文推导所必需。</p>
+<h2 id="2-lecun-初始化">2. LeCun 初始化<a class="heading-anchor" href="#2-lecun-初始化" aria-label="跳转到本节">#</a></h2>
+<p>先把矩阵乘法展开</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\bm y_l=(\bm W\bm x)_l
+=\sum_{i=1}^{d_{\mathrm{in}}}\bm W_{li}\bm x_i,\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>在初始化权重与输入独立的条件下，固定 \(\bm x\)，只对权重随机性取期望。零均值给出 \(\mathbb E_{\bm W}[\bm y_l\mid\bm x]=0\)；平方项则需要展开两次求和</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\begin{equation}
+\label{eq:conditional-output-second-moment}
+\begin{aligned}
+\mathbb E_{\bm W}[\bm y_l^2\mid\bm x]
+&#x26;=\mathbb E_{\bm W}\left[
+\left(\sum_i\bm W_{li}\bm x_i\right)
+\left(\sum_j\bm W_{lj}\bm x_j\right)\middle|\bm x\right]\\
+&#x26;=\sum_{i,j}\bm x_i\bm x_j\,
+\mathbb E_{\bm W}[\bm W_{li}\bm W_{lj}]\\
+&#x26;=\sum_i\sigma_W^2\bm x_i^2
+=\sigma_W^2\|\bm x\|_2^2.
+\end{aligned}
+\end{equation}\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>第三个等号成立是因为当 \(i\ne j\) 时，有 \(\mathbb E[\bm W_{li}\bm W_{lj}]=0\)，而当 \(i=j\) 时，该期望为 \(\sigma_W^2\)。因此，这里的等式并不要求输入的不同坐标相互独立。接下来再对输入取期望，得到适用于各坐标二阶矩不同的情形的一般公式</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\mathbb E[\bm y_l^2]
+=\mathbb E_{\bm x}\!\left[\mathbb E_{\bm W}[\bm y_l^2\mid\bm x]\right]
+=\sigma_W^2\sum_{i=1}^{d_{\mathrm{in}}}\mathbb E[\bm x_i^2],\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>不妨假设求和中的每一项都相等，因此对任一输入坐标 \(i\)，有</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\mathbb E[\bm y_l^2]
+=d_{\mathrm{in}}\sigma_W^2\mathbb E[\bm x_i^2].\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>若希望单坐标的二阶矩保持不变，即 \(\mathbb E[\bm y_l^2]=\mathbb E[\bm x_i^2]\)，由前面的单坐标公式得到</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[d_{\mathrm{in}}\sigma_W^2=1
+\quad\Longrightarrow\quad
+\boxed{\operatorname{Var}(\bm W_{li})=\frac1{d_{\mathrm{in}}}}.\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>这就是通常所说的 LeCun 初始化<span class="cite-ref" id="citation--lecun1998efficient-backprop--1"> (<a href="#bib-lecun1998efficient-backprop">1</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">1. </span>LeCun Y, Bottou L, Orr GB, Müller K-R. Efficient backprop. Neural networks: Tricks of the trade. 2002. p. 9–50. <a href="https://doi.org/10.1007/3-540-49430-8_2" target="_blank" rel="noopener noreferrer">https://doi.org/10.1007/3-540-49430-8_2</a></span></span></span>。可以理解为，每个输出项依赖于 \(d_{\mathrm{in}}\) 个输入坐标，所以需要除以 \(d_{\mathrm{in}}\) 来保持单坐标的二阶矩不变。</p>
+<p>不过，保持单坐标尺度不等于保持整个向量的模长，有</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\begin{aligned}
+\mathbb E\|\bm y\|_2^2
+&#x26;=\sum_{l=1}^{d_{\mathrm{out}}}\mathbb E[\bm y_l^2]
+=d_{\mathrm{out}}\mathbb E[\bm y_l^2]\\
+&#x26;=d_{\mathrm{out}}d_{\mathrm{in}}\sigma_W^2\mathbb E[\bm x_i^2]\\
+&#x26;=d_{\mathrm{out}}\sigma_W^2\mathbb E\|\bm x\|_2^2,
+\end{aligned}\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>此时代入 LeCun 初始化的 \(\sigma_W^2=1/d_{\mathrm{in}}\)，便有 \(\mathbb E\|\bm y\|_2^2=\frac{d_{\mathrm{out}}}{d_{\mathrm{in}}}\mathbb E\|\bm x\|_2^2\)，从 \(d\) 维映射到 \(4d\) 维时，如果每个坐标的二阶矩不变，平方模长的期望就会增加到四倍。</p>
+<p>若目标改为保持向量模长的期望，即 \(\mathbb E\|\bm y\|_2^2=\mathbb E\|\bm x\|_2^2\)，则由一般的平方模长公式得到</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[d_{\mathrm{out}}\sigma_W^2=1
+\quad\Longrightarrow\quad
+\boxed{\operatorname{Var}(\bm W_{li})=\frac1{d_{\mathrm{out}}}},\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>这就是 LeCun 初始化的对偶，也是<span class="cite-ref" id="citation--kexuefm-7180--2"> (<a href="#bib-kexuefm-7180">2</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">2. </span>苏剑林. 从几何视角来理解模型参数的初始化策略. 2020. <a href="https://kexue.fm/archives/7180" target="_blank" rel="noopener noreferrer">https://kexue.fm/archives/7180</a></span></span></span> 里几何推导得到的结果。</p>
+<h2 id="3-xavier-初始化">3. Xavier 初始化<a class="heading-anchor" href="#3-xavier-初始化" aria-label="跳转到本节">#</a></h2>
+<p>前面只考虑了前向传播，接下来看看反向传播的情况。设 \(\mathcal L\) 为标量损失，记输出梯度为 \(\bm g_y=\partial\mathcal L/\partial \bm y\)、输入梯度为 \(\bm g_x=\partial\mathcal L/\partial \bm x\)，同样采用列向量约定，有</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\begin{aligned}
+(\bm g_x)_i
+&#x26;=\sum_{l=1}^{d_{\mathrm{out}}}
+\frac{\partial\mathcal L}{\partial\bm y_l}
+\frac{\partial\bm y_l}{\partial\bm x_i}
+=\sum_{l=1}^{d_{\mathrm{out}}}(\bm g_y)_l\bm W_{li}\\
+&#x26;=(\bm W^\top\bm g_y)_i,
+\qquad \bm g_x=\bm W^\top\bm g_y.
+\end{aligned}\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>不妨假设输出梯度各坐标的二阶矩相同，并在初始化时忽略 \(\bm W\) 与反传梯度的相关性。仿照前面的展开，消去交叉项，有</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\mathbb E[(\bm g_x)_i^2]\approx\sum_{l=1}^{d_{\mathrm{out}}}
+\mathbb E[\bm W_{li}^2]\mathbb E[(\bm g_y)_l^2]
+=d_{\mathrm{out}}\sigma_W^2\mathbb E[(\bm g_y)_l^2].\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>注意反传梯度本身依赖于网络的前向计算，因此这里的独立性只是近似。</p>
+<p>因此，保持前向单坐标二阶矩需要 \(d_{\mathrm{in}}\sigma_W^2\approx1\)，保持反向单坐标二阶矩需要 \(d_{\mathrm{out}}\sigma_W^2\approx1\)。当输入、输出宽度不相等时，一个标量方差一般无法同时满足两者。</p>
+<p>一个折中的办法是让这两个乘子的算术平均等于 1，于是</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\frac{d_{\mathrm{in}}\sigma_W^2+d_{\mathrm{out}}\sigma_W^2}{2}=1
+\quad\Longrightarrow\quad
+\boxed{\operatorname{Var}(\bm W_{li})=\frac2{d_{\mathrm{in}}+d_{\mathrm{out}}}}.\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>这就是 Xavier 初始化<span class="cite-ref" id="citation--glorot2010initialization--3"> (<a href="#bib-glorot2010initialization">3</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">3. </span>Glorot X, Bengio Y. Understanding the difficulty of training deep feedforward neural networks. Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics. 2010. p. 249–56. <a href="https://proceedings.mlr.press/v9/glorot10a.html" target="_blank" rel="noopener noreferrer">https://proceedings.mlr.press/v9/glorot10a.html</a></span></span></span>。当 \(d_{\mathrm{in}}=d_{\mathrm{out}}\) 时，它与 LeCun 初始化相同；非方阵时，则只保证两个乘子的平均值为 1。</p>
+<p>例如 \(d_{\mathrm{out}}=4d_{\mathrm{in}}\)，忽略非线性时得到：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>初始化方差</th><th align="center">前向乘子</th><th align="center">反向乘子</th></tr></thead><tbody><tr><td>LeCun：\(1/d_{\mathrm{in}}\)</td><td align="center">\(1\)</td><td align="center">\(4\)</td></tr><tr><td>Xavier：\(2/(d_{\mathrm{in}}+d_{\mathrm{out}})\)</td><td align="center">\(2/5\)</td><td align="center">\(8/5\)</td></tr><tr><td>fan-out：\(1/d_{\mathrm{out}}\)</td><td align="center">\(1/4\)</td><td align="center">\(1\)</td></tr></tbody></table>
+<p>可以看到，Xavier 在前向与反向的二阶矩之间作了折中，是否合适取决于要控制哪个量。</p>
+<h2 id="4-kaiming-初始化">4. Kaiming 初始化<a class="heading-anchor" href="#4-kaiming-初始化" aria-label="跳转到本节">#</a></h2>
+<p>前面分析的是线性层，如果输出接入激活函数，就需要把非线性造成的尺度变化一起算进去。以 ReLU 为例，记 \(\bm z=\bm W\bm x\)、\(\bm y=\operatorname{ReLU}(\bm z)\)，若 \(\bm z_l\) 的分布关于零对称，则</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\begin{aligned}
+\mathbb E[\operatorname{ReLU}(\bm z_l)^2]
+&#x26;=\mathbb E[\bm z_l^2\mathbf 1_{\{\bm z_l>0\}}]\\
+&#x26;=\frac12\left(
+\mathbb E[\bm z_l^2\mathbf 1_{\{\bm z_l>0\}}]
++\mathbb E[\bm z_l^2\mathbf 1_{\{\bm z_l&#x3C;0\}}]\right)\\
+&#x26;=\frac12\mathbb E[\bm z_l^2].
+\end{aligned}\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>这里 \(\mathbf 1_{\{\cdot\}}\) 是指示函数，第二个等号成立是因为正、负半轴对二阶矩的贡献相同，而零点没有贡献。再代入前面的线性层公式，要求激活后的二阶矩满足 \(\mathbb E[\bm y_l^2]=\mathbb E[\bm x_i^2]\)，有</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\mathbb E[\bm y_l^2]
+=\frac12\mathbb E[\bm z_l^2]
+=\frac12d_{\mathrm{in}}\sigma_W^2\mathbb E[\bm x_i^2],
+\qquad
+\boxed{\operatorname{Var}(\bm W_{li})=\frac2{d_{\mathrm{in}}}}.\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>这就是适用于 ReLU 的 Kaiming 初始化<span class="cite-ref" id="citation--he2015rectifiers--4"> (<a href="#bib-he2015rectifiers">4</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">4. </span>He K, Zhang X, Ren S, Sun J. Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification. 2015. <a href="https://arxiv.org/abs/1502.01852" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/1502.01852</a></span></span></span>。这里采用 fan-in 来保持前向二阶矩，相应的 fan-out 版本为 \(2/d_{\mathrm{out}}\)，用于控制反向信号的尺度。</p>
+<p>注意 ReLU 输出一般不再是零均值，因此二阶矩与方差并不相等。例如，设单个预激活坐标 \(\bm z_l\sim\mathcal N(0,\sigma_z^2)\)，其中 \(\sigma_z^2=\mathbb E[\bm z_l^2]>0\) 是其方差，使用积分变量 \(t\) 可得</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\begin{aligned}
+\mathbb E[\operatorname{ReLU}(\bm z_l)]
+&#x26;=\int_0^\infty\frac{t}{\sqrt{2\pi \sigma_z^2}}
+\exp\!\left(-\frac{t^2}{2\sigma_z^2}\right)\,\mathrm dt\\
+&#x26;=\frac{\sigma_z^2}{\sqrt{2\pi \sigma_z^2}}
+=\sqrt{\frac{\sigma_z^2}{2\pi}},\\
+\operatorname{Var}(\operatorname{ReLU}(\bm z_l))
+&#x26;=\mathbb E[\operatorname{ReLU}(\bm z_l)^2]
+-\mathbb E[\operatorname{ReLU}(\bm z_l)]^2\\
+&#x26;=\frac{\sigma_z^2}{2}-\frac{\sigma_z^2}{2\pi}.
+\end{aligned}\]
+<p>对于 GELU 和 SiLU，激活前后的二阶矩比例还会随输入尺度变化，因而不能直接使用 ReLU 的固定系数。记一般激活函数为 \(\phi\)，令 \(\bm y=\phi(\bm W\bm x)\)，仍假设各输入坐标的二阶矩相同。用高斯变量近似线性层的预激活，并令 \(Z\sim\mathcal N(0,1)\)，一般需要研究</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\mathbb E[\bm y_l^2]
+\approx\mathbb E\left[\phi\!\left(\sqrt{d_{\mathrm{in}}\sigma_W^2\mathbb E[\bm x_i^2]}\,Z\right)^2\right].\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>因此，Transformer 中不同矩阵需要分别考虑。Q、K、V 投影后面没有 ReLU，SwiGLU 又包含两个分支的逐元素乘法，需要计算联合二阶矩，不能统一给标准差乘上 \(\sqrt2\)。</p>
+<p>以 SwiGLU 为例，设输入、输出宽度为 \(d\)，中间宽度为 \(d_{\mathrm{ff}}\)，两个分支的权重 \(\bm W_{\mathrm{gate}},\bm W_{\mathrm{up}}\in\mathbb R^{d_{\mathrm{ff}}\times d}\)，输出投影 \(\bm W_{\mathrm{down}}\in\mathbb R^{d\times d_{\mathrm{ff}}}\)，列向量形式为</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\operatorname{FFN}(\bm x)
+=\bm W_{\mathrm{down}}
+\left[\operatorname{SiLU}(\bm W_{\mathrm{gate}}\bm x)\odot(\bm W_{\mathrm{up}}\bm x)\right].\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>令 \(\bm g=\bm W_{\mathrm{gate}}\bm x\)、\(\bm u=\bm W_{\mathrm{up}}\bm x\)，中间乘积为 \(\bm v=\operatorname{SiLU}(\bm g)\odot\bm u\)，其中 \(\odot\) 表示逐元素乘法。对中间坐标 \(k=1,\ldots,d_{\mathrm{ff}}\)，有</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\mathbb E[\bm v_k^2]
+=\mathbb E[\operatorname{SiLU}(\bm g_k)^2\bm u_k^2]
+\approx\mathbb E[\operatorname{SiLU}(\bm g_k)^2]\,
+\mathbb E[\bm u_k^2].\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>这里的近似等号需要两个分支的输出近似独立。即使 gate 和 up 权重独立初始化，也只保证固定输入时的条件独立；对随机输入取平均后，共享的输入模长仍可能带来相关性。因此，SwiGLU 的 gain 需要结合两个分支计算。</p>
+<p>这三种初始化可以整理如下：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>方法</th><th>常见权重方差</th><th>主要控制对象</th></tr></thead><tbody><tr><td>LeCun</td><td>\(1/d_{\mathrm{in}}\)</td><td>线性前向的单坐标二阶矩</td></tr><tr><td>Xavier</td><td>\(2/(d_{\mathrm{in}}+d_{\mathrm{out}})\)</td><td>前向与反向逐坐标尺度的折中</td></tr><tr><td>Kaiming，ReLU fan-in</td><td>\(2/d_{\mathrm{in}}\)</td><td>加入 ReLU 后的前向二阶矩</td></tr></tbody></table>
+<p>在隐藏层输入、输出宽度按固定比例共同增长时，这三者的方差都与 \(1/d_{\mathrm{in}}\) 同阶，只在常数因子上有区别。</p>
+<h2 id="5-残差与归一化">5. 残差与归一化<a class="heading-anchor" href="#5-残差与归一化" aria-label="跳转到本节">#</a></h2>
+<p>前面控制了单层的二阶矩，但在 Transformer 中，各层输出还要通过残差相加，因此尺度会沿深度累积。</p>
+<p>设模型宽度为 \(d\)，网络有 \(L\) 个 Transformer block，每个 block 包含 attention 和 FFN 两个子层，总子层数为 \(B=2L\)。用 \(s=0,\ldots,B-1\) 表示子层编号，\(F_s\) 表示对应的 attention 或 FFN 运算，\(\alpha_L\) 是其输出在残差相加前的缩放系数。Pre-Norm 子层可以写成</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\bm x_{s+1}=\bm x_s+\alpha_L F_s(\operatorname{Norm}(\bm x_s)).\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>记 \(\bm r_s=F_s(\operatorname{Norm}(\bm x_s))\)。对残差流的任一坐标 \(i=1,\ldots,d\)，有</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\begin{aligned}
+\mathbb E[\bm x_{s+1,i}^2]
+&#x26;=\mathbb E[(\bm x_{s,i}+\alpha_L\bm r_{s,i})^2]\\
+&#x26;=\mathbb E[\bm x_{s,i}^2]
++2\alpha_L\mathbb E[\bm x_{s,i}\bm r_{s,i}]
++\alpha_L^2\mathbb E[\bm r_{s,i}^2],
+\end{aligned}\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>若初始化时交叉项可以忽略，再沿深度对上式求和，相邻子层的二阶矩相消，有</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\begin{equation}
+\label{eq:residual-accumulation}
+\begin{aligned}
+\mathbb E[\bm x_{B,i}^2]-\mathbb E[\bm x_{0,i}^2]
+&#x26;=\sum_{s=0}^{B-1}\left(\mathbb E[\bm x_{s+1,i}^2]-\mathbb E[\bm x_{s,i}^2]\right)\\
+&#x26;\approx\alpha_L^2\sum_{s=0}^{B-1}\mathbb E[\bm r_{s,i}^2].
+\end{aligned}
+\end{equation}\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>若 \(\mathbb{E}[\bm r_{s,i}^2]\) 都为常数量级，右侧便与 \(B\alpha_L^2\) 同阶。要让总增量保持常数阶，需要让 \(\alpha_L\) 按 \(B^{-1/2}\) 的阶数缩放，这其实也就是 \(L^{-1/2}\).</p>
+<p>例如 nanoGPT<span class="cite-ref" id="citation--karpathy-nanogpt--5"> (<a href="#bib-karpathy-nanogpt">5</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">5. </span>Karpathy A. nanoGPT: GPT Model Implementation. 2023. <a href="https://github.com/karpathy/nanoGPT/blob/master/model.py" target="_blank" rel="noopener noreferrer">https://github.com/karpathy/nanoGPT/blob/master/model.py</a></span></span></span>中，普通线性层和 embedding 用标准差 0.02 的正态初始化，attention 和 FFN 输出投影的 <code>c_proj.weight</code> 则用 \(0.02/\sqrt{2L}\)，这也符合上述推导。而这里的 0.02 则是沿用了 GPT-2 官方实现中的初始化标准差<span class="cite-ref" id="citation--openai-gpt2--6"> (<a href="#bib-openai-gpt2">6</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">6. </span>OpenAI. GPT-2: Official Implementation. 2019. <a href="https://github.com/openai/gpt-2" target="_blank" rel="noopener noreferrer">https://github.com/openai/gpt-2</a></span></span></span>。</p>
+<p>Pre-Norm 归一化的是残差分支的输入，并不直接约束相加后的残差流 \(\bm x_{s+1}\)，从式 \(\eqref{eq:residual-accumulation}\) 也可看出随着深度增加，对应残差流的二阶矩也会随之增加。</p>
+<h2 id="6-参数更新与特征变化">6. 参数更新与特征变化<a class="heading-anchor" href="#6-参数更新与特征变化" aria-label="跳转到本节">#</a></h2>
+<p>前一个部分考虑的是深度增加时的残差累积。接下来固定深度，看看模型变宽后参数更新会怎样变化。</p>
+<p>如果一组不同宽度的稠密输入满足 \(\frac1{d_{\mathrm{in}}}\sum_i\mathbb E[\bm x_i^2]=\Theta(1)\)，即平均坐标二阶矩不随宽度增长而发散或趋于零，就有</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\mathbb E\|\bm x\|_2^2
+=\sum_{i=1}^{d_{\mathrm{in}}}\mathbb E[\bm x_i^2]
+=\Theta(d_{\mathrm{in}}).\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>但期望的尺度不能直接推广到典型样本，因为可能存在</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[Z=\begin{cases}
+0,&#x26;\text{概率为 }0.99,\\
+10,&#x26;\text{概率为 }0.01.
+\end{cases}\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>这样的分布，此时每个坐标的二阶矩都是 1，但大量样本平方模长接近0，且维度增加也无法让样本的平方模长集中到期望附近。当然这些也并非下文推导所必需。</p>
+<p>对一个样本的线性层 \(\bm y=\bm W\bm x\)，记 \(\bm g=\partial\mathcal L/\partial \bm y\)，则</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\begin{aligned}
+\bm G_{li}
+&#x26;=\frac{\partial\mathcal L}{\partial\bm W_{li}}
+=\frac{\partial\mathcal L}{\partial\bm y_l}
+\frac{\partial\bm y_l}{\partial\bm W_{li}}
+=\bm g_l\bm x_i
+=(\bm g\bm x^\top)_{li},\\
+\bm G&#x26;=\bm g\bm x^\top
+\in\mathbb R^{d_{\mathrm{out}}\times d_{\mathrm{in}}}.
+\end{aligned}\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>设学习率为 \(\eta>0\)。如果用 SGD 更新 \(\Delta \bm W=-\eta \bm g\bm x^\top\)，先固定该层输入 \(\bm x\)，本层参数更新对特征的直接影响是</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\begin{equation}
+\label{eq:direct-feature-update}
+\boxed{\Delta \bm y_{\mathrm{direct}}
+=\Delta \bm W \bm x
+=-\eta(\bm g\bm x^\top)\bm x
+=-\eta\bm g(\bm x^\top\bm x)
+=-\eta \bm g\,\|\bm x\|_2^2}.
+\end{equation}\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>由式 \(\eqref{eq:conditional-output-second-moment}\)，初始化时输出单坐标的 RMS 为 \(\sigma_W\|\bm x\|_2=\Theta(\sigma_W\sqrt{d_{\mathrm{in}}})\)。而由式 \(\eqref{eq:direct-feature-update}\)，更新量中第 \(l\) 个输出坐标的每一项为 \(-\eta\bm g_l\bm x_i^2\)，其中 \(i\) 遍历输入坐标。对固定样本和输出坐标 \(l\)，这些项具有相同的因子 \(-\eta\bm g_l\)，且 \(\bm x_i^2\ge0\)，因此不会相互抵消，而是按 \(\sum_i\bm x_i^2=\Theta(d_{\mathrm{in}})\) 累积，可以看到，相比之前已经差出平方量级。</p>
+<p>同时，将梯度外积的平方范数展开，有</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\|\bm G\|_F^2
+=\sum_{l,i}(\bm g_l\bm x_i)^2
+=\left(\sum_l\bm g_l^2\right)\left(\sum_i\bm x_i^2\right)
+=\|\bm g\|_2^2\|\bm x\|_2^2.\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>单层更新对损失的一阶贡献是</p>
+<span class="math-tight-anchor" aria-hidden="true"></span>
+\[\begin{equation}
+\label{eq:direct-loss-update}
+\Delta\mathcal L_W
+\approx\langle \bm G,\Delta \bm W\rangle_F
+=-\eta\|\bm G\|_F^2
+=-\eta\|\bm g\|_2^2\|\bm x\|_2^2.
+\end{equation}\]
+<span class="math-tight-after-anchor" aria-hidden="true"></span>
+<p>式 \(\eqref{eq:direct-feature-update}\) 和 \(\eqref{eq:direct-loss-update}\) 分别描述特征变化与损失变化。即使总损失变化保持常数阶，部分隐藏层的特征变化仍可能随宽度趋于零。\(\mu\)P 希望各层的特征变化都稳定且不消失，在宽度缩放允许的阶数下取最大更新，并不是把数值学习率取得越大越好<span class="cite-ref" id="citation--yang2021feature-learning--7"> (<a href="#bib-yang2021feature-learning">7</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">7. </span>Yang G, Hu EJ. Tensor Programs IV: Feature Learning in Infinite-Width Neural Networks. 2022. <a href="https://arxiv.org/abs/2011.14522" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2011.14522</a></span></span></span>。</p>
+<p>注意本节推导均固定了本层输入，只计算本层参数更新的直接贡献。完整网络还包含上游特征变化，一阶近似为 \(\Delta \bm y\approx\Delta \bm W \bm x+\bm W\Delta \bm x\)，因此单层结果还不能直接描述完整的训练过程。</p>
+<section class="article-citation"><h2 id="引用本文">引用本文<a class="heading-anchor" href="#引用本文" aria-label="跳转到本节">#</a></h2><pre><code>@online{model_initialization_2026,
+  title = {模型训练的初始化},
+  author = {Haoyu Tang},
+  year = {2026},
+  url = {https://blog.himalalps.top/model-initialization}
+}</code></pre></section>
+<h2 id="参考文献">参考文献<a class="heading-anchor" href="#参考文献" aria-label="跳转到本节">#</a></h2><div id="refs" class="references csl-bib-body">
+  <div class="csl-entry" id="bib-lecun1998efficient-backprop">
+    <div class="csl-left-margin">1. </div><div class="csl-right-inline">LeCun Y, Bottou L, Orr GB, Müller K-R. Efficient backprop. Neural networks: Tricks of the trade. 2002. p. 9–50. <a href="https://doi.org/10.1007/3-540-49430-8_2" target="_blank" rel="noopener noreferrer">https://doi.org/10.1007/3-540-49430-8_2</a></div>
+  </div>
+  <div class="csl-entry" id="bib-kexuefm-7180">
+    <div class="csl-left-margin">2. </div><div class="csl-right-inline">苏剑林. 从几何视角来理解模型参数的初始化策略. 2020. <a href="https://kexue.fm/archives/7180" target="_blank" rel="noopener noreferrer">https://kexue.fm/archives/7180</a></div>
+  </div>
+  <div class="csl-entry" id="bib-glorot2010initialization">
+    <div class="csl-left-margin">3. </div><div class="csl-right-inline">Glorot X, Bengio Y. Understanding the difficulty of training deep feedforward neural networks. Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics. 2010. p. 249–56. <a href="https://proceedings.mlr.press/v9/glorot10a.html" target="_blank" rel="noopener noreferrer">https://proceedings.mlr.press/v9/glorot10a.html</a></div>
+  </div>
+  <div class="csl-entry" id="bib-he2015rectifiers">
+    <div class="csl-left-margin">4. </div><div class="csl-right-inline">He K, Zhang X, Ren S, Sun J. Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification. 2015. <a href="https://arxiv.org/abs/1502.01852" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/1502.01852</a></div>
+  </div>
+  <div class="csl-entry" id="bib-karpathy-nanogpt">
+    <div class="csl-left-margin">5. </div><div class="csl-right-inline">Karpathy A. nanoGPT: GPT Model Implementation. 2023. <a href="https://github.com/karpathy/nanoGPT/blob/master/model.py" target="_blank" rel="noopener noreferrer">https://github.com/karpathy/nanoGPT/blob/master/model.py</a></div>
+  </div>
+  <div class="csl-entry" id="bib-openai-gpt2">
+    <div class="csl-left-margin">6. </div><div class="csl-right-inline">OpenAI. GPT-2: Official Implementation. 2019. <a href="https://github.com/openai/gpt-2" target="_blank" rel="noopener noreferrer">https://github.com/openai/gpt-2</a></div>
+  </div>
+  <div class="csl-entry" id="bib-yang2021feature-learning">
+    <div class="csl-left-margin">7. </div><div class="csl-right-inline">Yang G, Hu EJ. Tensor Programs IV: Feature Learning in Infinite-Width Neural Networks. 2022. <a href="https://arxiv.org/abs/2011.14522" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/2011.14522</a></div>
+  </div>
+</div>
+<script type="text/javascript">(function() {
+  var s = document.createElement('script');
+  s.src = 'https://giscus.app/client.js';
+  s.dataset.repo = 'himalalps/blog'; s.dataset.repoId = 'R_kgDORl6gRw';
+  s.dataset.category = 'Announcements'; s.dataset.categoryId = 'DIC_kwDORl6gR84DEfeQ';
+  s.dataset.mapping = 'pathname'; s.dataset.strict = '0'; s.dataset.reactionsEnabled = '1';
+  s.dataset.emitMetadata = '0'; s.dataset.inputPosition = 'top';
+  s.dataset.theme = document.documentElement.dataset.theme === 'dark' ? 'noborder_dark' : 'noborder_light';
+  s.dataset.lang = 'zh-CN'; s.dataset.loading = 'lazy'; s.crossOrigin = 'anonymous'; s.async = true;
+  document.currentScript.parentNode.insertBefore(s, document.currentScript.nextSibling);
+})();</script><script type="text/javascript">(() => {
+  const getTheme = () => document.documentElement.dataset.theme === 'dark' ? 'noborder_dark' : 'noborder_light';
+  const update = () => { const frame = document.querySelector('.giscus-frame');
+    if (frame) frame.contentWindow.postMessage({ giscus: { setConfig: { theme: getTheme() } } }, 'https://giscus.app'); };
+  new MutationObserver(update).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  new MutationObserver(update).observe(document.body, { childList: true, subtree: true }); update();
+})();</script> </article> <script>(function(){const productionHostname = "blog.himalalps.top";
+
+      // Local previews and alternate deployment domains must not send counts.
+      if (window.location.hostname === productionHostname && !window.location.port) {
+        const script = document.createElement('script');
+        script.defer = true;
+        script.src = 'https://vercount.one/js';
+        document.body.appendChild(script);
+      }
+    })();</script> </main> <footer data-astro-cid-sckkx6r4> <div class="footer-content" data-astro-cid-sckkx6r4> <p data-astro-cid-sckkx6r4>&copy; 2026 Vibe</p> <a href="https://github.com/himalalps/blog" class="github-link" title="GitHub 仓库" aria-label="GitHub 仓库" target="_blank" rel="noreferrer" data-astro-cid-sckkx6r4> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor" data-astro-cid-sckkx6r4> <path d="M12 .5a12 12 0 0 0-3.79 23.39c.6.11.82-.26.82-.58v-2.03c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.74.08-.74 1.2.09 1.84 1.23 1.84 1.23 1.07 1.83 2.81 1.3 3.5.99.11-.77.42-1.3.76-1.6-2.67-.3-5.47-1.34-5.47-5.93 0-1.31.47-2.38 1.23-3.22-.12-.3-.53-1.52.12-3.18 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.65 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.6-2.8 5.62-5.48 5.92.43.37.81 1.1.81 2.22v3.29c0 .32.22.69.83.57A12 12 0 0 0 12 .5Z" data-astro-cid-sckkx6r4></path> </svg> </a> <a href="https://himalalps.top" class="home-link" title="返回主站" aria-label="返回主站" target="_blank" rel="noreferrer" data-astro-cid-sckkx6r4> <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-sckkx6r4> <path d="m3 10 9-7 9 7" data-astro-cid-sckkx6r4></path> <path d="M5 9.5V21h14V9.5" data-astro-cid-sckkx6r4></path> <path d="M9 21v-6h6v6" data-astro-cid-sckkx6r4></path> </svg> </a> <a href="/rss.xml" class="rss-link" title="RSS Feed" data-astro-cid-sckkx6r4> <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-astro-cid-sckkx6r4> <path d="M4 11a9 9 0 0 1 9 9" data-astro-cid-sckkx6r4></path> <path d="M4 4a16 16 0 0 1 16 16" data-astro-cid-sckkx6r4></path> <circle cx="5" cy="19" r="1" data-astro-cid-sckkx6r4></circle> </svg> </a> </div> </footer>  <!-- Copy code functionality -->     </body> </html> 
