@@ -92,7 +92,7 @@ $$
 $$
 d_{\mathrm{in}}\sigma_W^2=1
 \quad\Longrightarrow\quad
-\boxed{\operatorname{Var}(\bm W_{li})=\frac1{d_{\mathrm{in}}}}.
+\boxed{\operatorname{Var}(\bm W_{li})=\frac1{d_{\mathrm{in}}}}
 $$
 这就是通常所说的 LeCun 初始化 [@lecun1998efficient-backprop]。可以理解为，每个输出项依赖于 $d_{\mathrm{in}}$ 个输入坐标，所以需要除以 $d_{\mathrm{in}}$ 来保持单坐标的二阶矩不变。
 
@@ -144,7 +144,7 @@ $$
 $$
 \frac{d_{\mathrm{in}}\sigma_W^2+d_{\mathrm{out}}\sigma_W^2}{2}=1
 \quad\Longrightarrow\quad
-\boxed{\operatorname{Var}(\bm W_{li})=\frac2{d_{\mathrm{in}}+d_{\mathrm{out}}}}.
+\boxed{\operatorname{Var}(\bm W_{li})=\frac2{d_{\mathrm{in}}+d_{\mathrm{out}}}}
 $$
 这就是 Xavier 初始化 [@glorot2010initialization]。当 $d_{\mathrm{in}}=d_{\mathrm{out}}$ 时，它与 LeCun 初始化相同；非方阵时，则只保证两个乘子的平均值为 1。
 
@@ -177,7 +177,7 @@ $$
 =\frac12\mathbb E[\bm z_l^2]
 =\frac12d_{\mathrm{in}}\sigma_W^2\mathbb E[\bm x_i^2],
 \qquad
-\boxed{\operatorname{Var}(\bm W_{li})=\frac2{d_{\mathrm{in}}}}.
+\boxed{\operatorname{Var}(\bm W_{li})=\frac2{d_{\mathrm{in}}}}
 $$
 这就是适用于 ReLU 的 Kaiming 初始化 [@he2015rectifiers]。这里采用 fan-in 来保持前向二阶矩，相应的 fan-out 版本为 $2/d_{\mathrm{out}}$，用于控制反向信号的尺度。
 
@@ -303,7 +303,7 @@ $$
 =\Delta \bm W \bm x
 =-\eta(\bm g\bm x^\top)\bm x
 =-\eta\bm g(\bm x^\top\bm x)
-=-\eta \bm g\,\|\bm x\|_2^2}.
+=-\eta \bm g\,\|\bm x\|_2^2.}
 \end{equation}
 $$
 由式 $\eqref{eq:conditional-output-second-moment}$，初始化时输出单坐标的 RMS 为 $\sigma_W\|\bm x\|_2=\Theta(\sigma_W\sqrt{d_{\mathrm{in}}})$。而由式 $\eqref{eq:direct-feature-update}$，更新量中第 $l$ 个输出坐标的每一项为 $-\eta\bm g_l\bm x_i^2$，其中 $i$ 遍历输入坐标。对固定样本和输出坐标 $l$，这些项具有相同的因子 $-\eta\bm g_l$，且 $\bm x_i^2\ge0$，因此不会相互抵消，而是按 $\sum_i\bm x_i^2=\Theta(d_{\mathrm{in}})$ 累积，可以看到，相比之前已经差出平方量级。
@@ -399,7 +399,7 @@ $$
 \operatorname{Var}((\bm W_1)_{ki})=\Theta(1),\qquad
 \operatorname{Var}((\bm W_2)_{jk})=\Theta(d^{-1}),\qquad
 \operatorname{Var}((\bm W_3)_{lj})=\Theta(d^{-2})
-}.
+}
 $$
 此时 $\mathbb E[\bm y_l^2]=\Theta(d^{-1})$，初始输出可以趋于零。输出层更小的方差，是为了容纳训练中不随宽度消失的相关特征变化。接下来检查各层学习率应如何缩放，才能产生这样的常数阶变化。
 
@@ -603,7 +603,7 @@ $$
 $$
 代入更新的谱条件，便有
 $$
-\boxed{\eta=\Theta\!\left(\sqrt{\frac{d_{\mathrm{out}}}{d_{\mathrm{in}}}}\right)}.
+\boxed{\eta=\Theta\!\left(\sqrt{\frac{d_{\mathrm{out}}}{d_{\mathrm{in}}}}\right)}
 $$
 输入层的维度比为 $d_1/d_0=\Theta(d)$，隐藏层为 $d_2/d_1=\Theta(1)$，输出层为 $d_3/d_2=\Theta(d^{-1})$，对应学习率分别为 $\Theta(\sqrt d)$、$\Theta(1)$、$\Theta(d^{-1/2})$，与第 7 节一致。这个谱范数结论对任意非零梯度矩阵成立，不需要秩一或 Nuclear 范数与 Frobenius 范数同阶的假设。
 
