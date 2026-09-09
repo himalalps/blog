@@ -151,10 +151,10 @@ $$
 例如 $d_{\mathrm{out}}=4d_{\mathrm{in}}$，忽略非线性时得到：
 
 | 初始化方差                                     | 前向乘子 | 反向乘子 |
-| ---------------------------------------------- | :------------: | :------------: |
-| LeCun：$1/d_{\mathrm{in}}$                     |      $1$       |      $4$       |
-| Xavier：$2/(d_{\mathrm{in}}+d_{\mathrm{out}})$ |     $2/5$      |     $8/5$      |
-| fan-out：$1/d_{\mathrm{out}}$                  |     $1/4$      |      $1$       |
+| ---------------------------------------------- | :------: | :------: |
+| LeCun：$1/d_{\mathrm{in}}$                     |   $1$    |   $4$    |
+| Xavier：$2/(d_{\mathrm{in}}+d_{\mathrm{out}})$ |  $2/5$   |  $8/5$   |
+| fan-out：$1/d_{\mathrm{out}}$                  |  $1/4$   |   $1$    |
 
 可以看到，Xavier 在前向与反向的二阶矩之间作了折中，是否合适取决于要控制哪个量。
 
@@ -216,7 +216,7 @@ $$
 \approx\mathbb E[\operatorname{SiLU}(\bm g_k)^2]\,
 \mathbb E[\bm u_k^2].
 $$
-这里的近似等号需要两个分支的输出近似独立。即使 gate 和 up 权重独立初始化，也只保证固定输入时的条件独立；对随机输入取平均后，共享的输入模长仍可能带来相关性。因此，SwiGLU 的 gain 需要结合两个分支计算。
+这里的近似等号需要两个分支的输出近似独立。即使 gate 和 up 权重独立初始化，也只保证固定输入时的条件独立；对随机输入取平均后，共享的输入模长仍可能带来相关性。
 
 这三种初始化可以整理如下：
 
@@ -328,6 +328,294 @@ $$
 式 $\eqref{eq:direct-feature-update}$ 和 $\eqref{eq:direct-loss-update}$ 分别描述特征变化与损失变化。即使总损失变化保持常数阶，部分隐藏层的特征变化仍可能随宽度趋于零。$\mu$P 希望各层的特征变化都稳定且不消失，在宽度缩放允许的阶数下取最大更新，并不是把数值学习率取得越大越好 [@yang2021feature-learning]。
 
 注意本节推导均固定了本层输入，只计算本层参数更新的直接贡献。完整网络还包含上游特征变化，一阶近似为 $\Delta \bm y\approx\Delta \bm W \bm x+\bm W\Delta \bm x$，因此单层结果还不能直接描述完整的训练过程。
+
+## 7. $\mu$P 参数化
+
+前面看到，参数更新与输入相关，特征变化会按输入平方模长累积。要让不同宽度的网络都有常数阶的特征变化，就需要一起确定初始化和学习率。以一个两隐藏层网络为例，记激活函数为 $\phi$，输入为 $\bm x_0$，两层隐藏表示为 $\bm x_1,\bm x_2$，最终输出为 $\bm y$，有
+$$
+\bm x_1=\phi(\bm W_1\bm x_0),\qquad
+\bm x_2=\phi(\bm W_2\bm x_1),\qquad
+\bm y=\bm W_3\bm x_2,
+$$
+记各层表示的维度依次为 $d_0,d_1,d_2,d_3$，其中 $d_3$ 是最终输出维度，则
+$$
+\bm W_1\in\mathbb R^{d_1\times d_0},\qquad
+\bm W_2\in\mathbb R^{d_2\times d_1},\qquad
+\bm W_3\in\mathbb R^{d_3\times d_2}.
+$$
+下文用 $i,k,j,l$ 分别表示输入、第一隐藏层、第二隐藏层和最终输出的坐标，优化器直接更新 $\bm W_1,\bm W_2,\bm W_3$。
+
+接下来固定 $d_0,d_3$，让两个隐藏层按固定比例变宽。用 $d$ 表示共同的宽度参数，设 $c_1,c_2>0$ 为不随 $d$ 改变的常数，有
+$$
+d_1=c_1d,\qquad d_2=c_2d,\qquad d\to\infty.
+$$
+下文的 $\Theta$ 均指相对于 $d$ 的阶数。先沿用前面的 fan-in 分析：输入维度 $d_0$ 固定，第一层的权重方差为常数阶；第二层有 $d_1=\Theta(d)$ 个输入，权重方差应为 $1/d$ 阶。因此，保持隐藏表示的平均坐标二阶矩为常数阶，需要
+$$
+\operatorname{Var}((\bm W_1)_{ki})=\Theta(1),\qquad
+\operatorname{Var}((\bm W_2)_{jk})=\Theta(d^{-1}).
+$$
+后面分析更新时，还假设所考察样本满足 $\|\bm x_0\|_2^2=\Theta(1)$、$\|\bm x_1\|_2^2,\|\bm x_2\|_2^2=\Theta(d)$。
+
+输出层需要多考虑一步：它既要让初始化输出有界，也要让常数阶的隐藏特征变化能产生有界、非零的输出变化。用 $\beta$ 表示输出层**方差**的缩放指数，令
+$$
+\operatorname{Var}((\bm W_3)_{lj})=\Theta(d^{-\beta}).
+$$
+初始化时，权重零均值、各元素独立，且 $\bm W_3$ 与 $\bm x_2$ 独立，因此
+$$
+\begin{aligned}
+\mathbb E[\bm y_l^2]
+&=\sum_{j=1}^{d_2}\mathbb E[(\bm W_3)_{lj}^2]\,
+\mathbb E[(\bm x_2)_j^2]\\
+&=d_2\cdot\Theta(d^{-\beta})\cdot\Theta(1)
+=\Theta(d^{1-\beta}).
+\end{aligned}
+$$
+仅要求初始化输出的二阶矩有界，便只需 $\beta\geqslant1$。传统 fan-in 取 $\beta=1$，但这还没有考虑训练中的相关性。
+
+反向传播经过 $\bm W_3^\top$，隐藏特征的变化也会依赖输出层权重，因而不能继续按初始化时的独立求和计算。记隐藏特征变化为 $\Delta\bm x_2$，固定输出层权重时，它对输出的贡献为 $\Delta\bm y_{\mathrm{feature}}=\bm W_3\Delta\bm x_2$。为了分离权重的宽度因子，写成
+$$
+\bm W_3=d^{-\beta/2}\bm A_3,\qquad
+\operatorname{Var}((\bm A_3)_{lj})=\Theta(1).
+$$
+若 $\Delta\bm x_2$ 的坐标为常数阶，并且它与某一行输出权重的相关分量满足
+$$
+\left|\frac1{d_2}\sum_{j=1}^{d_2}(\bm A_3)_{lj}(\Delta\bm x_2)_j\right|
+=\Theta(1),
+$$
+则有
+$$
+\begin{aligned}
+(\Delta\bm y_{\mathrm{feature}})_l
+&=(\bm W_3\Delta\bm x_2)_l
+=d^{-\beta/2}\sum_{j=1}^{d_2}(\bm A_3)_{lj}(\Delta\bm x_2)_j\\
+&=d_2d^{-\beta/2}\left[\frac1{d_2}\sum_{j=1}^{d_2}(\bm A_3)_{lj}(\Delta\bm x_2)_j\right],\\
+\left|(\Delta\bm y_{\mathrm{feature}})_l\right|
+&=\Theta(d^{1-\beta/2}).
+\end{aligned}
+$$
+这里的相关分量按 $d$ 累积，而初始化时独立随机项的二阶矩按 $d$ 累积，两者对权重方差的要求不同。在上述相关性条件下，fan-in 的 $\beta=1$ 会使输出变化达到 $\sqrt d$ 阶；要让它保持常数阶，需要 $\beta=2$。这给出 $\mu$P 的初始化方差：
+$$
+\boxed{
+\operatorname{Var}((\bm W_1)_{ki})=\Theta(1),\qquad
+\operatorname{Var}((\bm W_2)_{jk})=\Theta(d^{-1}),\qquad
+\operatorname{Var}((\bm W_3)_{lj})=\Theta(d^{-2})
+}.
+$$
+此时 $\mathbb E[\bm y_l^2]=\Theta(d^{-1})$，初始输出可以趋于零。输出层更小的方差，是为了容纳训练中不随宽度消失的相关特征变化。接下来检查各层学习率应如何缩放，才能产生这样的常数阶变化。
+
+**先看 SGD。** 假设激活导数和损失对输出的梯度具有非零的常数阶尺度。记两层预激活为 $\bm z_1=\bm W_1\bm x_0$、$\bm z_2=\bm W_2\bm x_1$，预激活梯度为 $\bm\delta_1=\partial\mathcal L/\partial\bm z_1$、$\bm\delta_2=\partial\mathcal L/\partial\bm z_2$，输出梯度为 $\bm g_y=\partial\mathcal L/\partial\bm y$。链式法则给出
+$$
+\begin{aligned}
+\bm\delta_2
+&=\phi'(\bm z_2)\odot(\bm W_3^\top\bm g_y),\\
+(\bm\delta_2)_j
+&=\phi'((\bm z_2)_j)
+\sum_{l=1}^{d_3}(\bm W_3)_{lj}(\bm g_y)_l,\\
+\bm\delta_1
+&=\phi'(\bm z_1)\odot(\bm W_2^\top\bm\delta_2),\\
+(\bm\delta_1)_k
+&=\phi'((\bm z_1)_k)
+\sum_{j=1}^{d_2}(\bm W_2)_{jk}(\bm\delta_2)_j.
+\end{aligned}
+$$
+第二隐藏层只对固定数量的输出坐标求和。输出权重方差为 $\Theta(d^{-2})$，对应的 RMS 为 $\Theta(d^{-1})$；输出梯度和激活导数为常数阶，所以 $(\bm\delta_2)_j$ 的 RMS 也为 $\Theta(d^{-1})$。第一隐藏层多了一次含 $d_2$ 项的求和；沿用初始化反传的独立性近似，其二阶矩为
+$$
+\mathbb E[(\bm\delta_1)_k^2]
+\approx\mathbb E[\phi'((\bm z_1)_k)^2]
+\sum_{j=1}^{d_2}\mathbb E[(\bm W_2)_{jk}^2]\,
+\mathbb E[(\bm\delta_2)_j^2]
+=\Theta(1)\cdot d_2\cdot\Theta(d^{-1})\cdot\Theta(d^{-2})
+=\Theta(d^{-2}).
+$$
+因此，两层隐藏梯度坐标的 RMS 都为 $d^{-1}$ 阶。
+
+记第 $a$ 层的学习率为 $\eta_a$，$a=1,2,3$。将梯度尺度代入式 $\eqref{eq:direct-feature-update}$，得到各层的直接变化；隐藏层先计算预激活，在激活导数不退化的小步更新下，激活后的变化具有相同阶数。
+
+|    层     | 输入平方模长 |  输出端梯度坐标  |  直接特征变化坐标  | 使变化保持常数阶所需 SGD 学习率 |
+| :-------: | :----------: | :--------------: | :----------------: | :-----------------------------: |
+| $\bm W_1$ | $\Theta(1)$  | $\Theta(d^{-1})$ | $\Theta(\eta_1/d)$ |        $\eta_1\propto d$        |
+| $\bm W_2$ | $\Theta(d)$  | $\Theta(d^{-1})$ |  $\Theta(\eta_2)$  |        $\eta_2\propto1$         |
+| $\bm W_3$ | $\Theta(d)$  |   $\Theta(1)$    | $\Theta(\eta_3d)$  |     $\eta_3\propto d^{-1}$      |
+
+用式 $\eqref{eq:direct-loss-update}$ 检查，三层的梯度平方范数分别为 $\Theta(d^{-1})$、$\Theta(1)$、$\Theta(d)$，乘上对应学习率后，对损失的一阶贡献也都为常数阶。
+
+**对于 Adam** ，梯度幅度会被归一化，学习率的缩放也会随之改变。记 $\widehat{\bm M}$、$\widehat{\bm V}$ 为经过偏差修正的梯度一阶矩、二阶矩估计，$\epsilon>0$ 为分母中的稳定常数。忽略权重衰减，Adam 更新为
+$$
+\Delta \bm W=-\eta\frac{\widehat{\bm M}}{\sqrt{\widehat{\bm V}}+\epsilon},
+$$
+运算均逐元素进行。若整个梯度历史乘以正数 $c$，分子与分母中的平方根也都乘以 $c$，因此在 $\epsilon$ 可忽略时，更新不受梯度整体幅度影响 [@kingma2015adam]。
+
+在一阶矩和二阶矩状态均从零开始时，第一步偏差修正后有 $\widehat{\bm M}=\bm G$、$\widehat{\bm V}=\bm G\odot\bm G$。若 $\epsilon$ 可忽略，非零坐标上的更新就是 $-\eta\operatorname{sign}(\bm G)$。再代入单样本的 $\bm G=\bm g\bm x^\top$，有
+$$
+\begin{aligned}
+{[\operatorname{sign}(\bm g\bm x^\top)\bm x]}_l
+&=\sum_{i=1}^{d_{\mathrm{in}}}\operatorname{sign}(\bm g_l\bm x_i)\bm x_i\\
+&=\operatorname{sign}(\bm g_l)
+\sum_{i=1}^{d_{\mathrm{in}}}\operatorname{sign}(\bm x_i)\bm x_i\\
+&=\operatorname{sign}(\bm g_l)\sum_{i=1}^{d_{\mathrm{in}}}|\bm x_i|.
+\end{aligned}
+$$
+若样本还满足 $\frac1{d_{\mathrm{in}}}\sum_i|\bm x_i|=\Theta(1)$，则每个非零梯度坐标对应的直接特征变化为 $\Theta(\eta d_{\mathrm{in}})$，所以 Adam 学习率按 $1/d_{\mathrm{in}}$ 缩放：输入层保持常数，隐藏层和输出层按 $1/d$ 缩小。这里用单样本第一步解释缩放指数，完整的 $\mu$P 训练分析见 [@yang2022mup]；若 $\epsilon$ 不可忽略，梯度尺度便不能抵消。
+
+**接下来考虑 Muon。** [@kexuefm-10770] 这里忽略动量和额外缩放，用精确矩阵正交化分析更新尺度。设非零梯度矩阵 $\bm G=\partial\mathcal L/\partial\bm W$ 的紧致奇异值分解为 $\bm G=\bm U\bm\Sigma\bm V^\top$，其中 $\bm\Sigma$ 只保留正奇异值，定义
+$$
+\operatorname{msign}(\bm G)=\bm U\bm V^\top,\qquad
+\Delta\bm W=-\eta\operatorname{msign}(\bm G).
+$$
+它将非零奇异值统一为 1。记 $r=\operatorname{rank}(\bm G)$，$\sigma_k$ 为第 $k$ 个正奇异值，$k=1,\ldots,r$。单层更新对损失的一阶贡献为
+$$
+\begin{aligned}
+\Delta\mathcal L_W
+&\approx\langle\bm G,\Delta\bm W\rangle_F
+=-\eta\operatorname{tr}\!\left[(\bm U\bm\Sigma\bm V^\top)^\top\bm U\bm V^\top\right]\\
+&=-\eta\operatorname{tr}(\bm\Sigma)
+=-\eta\sum_{k=1}^r\sigma_k
+=-\eta\|\bm G\|_*.
+\end{aligned}
+$$
+这里 $\|\bm G\|_*$ 是 Nuclear 范数，即奇异值之和；Frobenius 范数则为 $\|\bm G\|_F=(\sum_k\sigma_k^2)^{1/2}$. 一般有
+$$
+\|\bm G\|_F\leqslant\|\bm G\|_*\leqslant\sqrt r\,\|\bm G\|_F.
+$$
+沿用前面的单样本线性层，$\bm G=\bm g\bm x^\top$ 为秩一矩阵，只有一个非零奇异值，所以此时两个范数相等：
+$$
+\|\bm G\|_*=\|\bm G\|_F=\|\bm g\|_2\|\bm x\|_2.
+$$
+记三层权重梯度为 $\bm G_1,\bm G_2,\bm G_3$。前面已经得到它们的 Frobenius 平方范数，开平方便有
+$$
+\|\bm G_1\|_*=\Theta(d^{-1/2}),\qquad
+\|\bm G_2\|_*=\Theta(1),\qquad
+\|\bm G_3\|_*=\Theta(d^{1/2}).
+$$
+要让各层对损失的一阶贡献都保持常数阶，相应学习率应为
+$$
+\eta_1\propto\sqrt d,\qquad
+\eta_2\propto1,\qquad
+\eta_3\propto d^{-1/2}.
+$$
+还需要检查特征变化。更新可直接写成
+$$
+\begin{aligned}
+\Delta\bm W
+&=-\eta\frac{\bm g\bm x^\top}{\|\bm g\|_2\|\bm x\|_2},\\
+\Delta\bm y_{\mathrm{direct}}
+&=\Delta\bm W\bm x
+=-\eta\frac{\bm g}{\|\bm g\|_2}\|\bm x\|_2.
+\end{aligned}
+$$
+两层隐藏梯度的坐标为 $\Theta(d^{-1})$、模长为 $\Theta(d^{-1/2})$，最终输出梯度的坐标和模长均为常数阶。因此三层直接特征变化的坐标尺度依次为 $\Theta(\eta_1/\sqrt d)$、$\Theta(\eta_2)$、$\Theta(\eta_3\sqrt d)$，代入上述学习率后也都为常数阶。
+
+将初始化与学习率整理如下表。
+
+| 参数类别 | 维度随 $d$ 增长                    |    初始化方差    |    SGD 学习率    |   Adam 学习率    |    Muon 学习率     |
+| :------: | ---------------------------------- | :--------------: | :--------------: | :--------------: | :----------------: |
+|  输入层  | 仅 $d_{\mathrm{out}}$              |   $\Theta(1)$    |   $\Theta(d)$    |   $\Theta(1)$    | $\Theta(d^{1/2})$  |
+|  隐藏层  | $d_{\mathrm{in}},d_{\mathrm{out}}$ | $\Theta(d^{-1})$ |   $\Theta(1)$    | $\Theta(d^{-1})$ |    $\Theta(1)$     |
+|  输出层  | 仅 $d_{\mathrm{in}}$               | $\Theta(d^{-2})$ | $\Theta(d^{-1})$ | $\Theta(d^{-1})$ | $\Theta(d^{-1/2})$ |
+
+## 8. 谱范数视角
+
+前面逐个坐标计算特征变化，也可以从矩阵对向量的最大放大率来理解这三类参数。
+
+对单个输入向量，用 RMS 衡量其平均坐标大小，定义
+$$
+\operatorname{RMS}(\bm x)=\sqrt{\frac{\|\bm x\|_2^2}{d_{\mathrm{in}}}}
+$$
+对输出向量也按其坐标数定义 RMS，于是矩阵对 RMS 的最大放大率为
+$$
+\begin{aligned}
+\|\bm W\|_{\mathrm{RMS}\to\mathrm{RMS}}
+&:=\sup_{\bm x\ne0}\frac{\operatorname{RMS}(\bm W\bm x)}{\operatorname{RMS}(\bm x)}\\
+&=\sup_{\bm x\ne0}
+\frac{\|\bm W\bm x\|_2/\sqrt{d_{\mathrm{out}}}}
+{\|\bm x\|_2/\sqrt{d_{\mathrm{in}}}}\\
+&=\sqrt{\frac{d_{\mathrm{in}}}{d_{\mathrm{out}}}}
+\sup_{\bm x\ne0}\frac{\|\bm W\bm x\|_2}{\|\bm x\|_2}
+=\sqrt{\frac{d_{\mathrm{in}}}{d_{\mathrm{out}}}}\|\bm W\|_2.
+\end{aligned}
+$$
+这里 $\|\bm W\|_2$ 是矩阵的谱范数。若要求权重及其更新对 RMS 的最大放大率都保持常数阶，移项便得到
+$$
+\|\bm W\|_2=\Theta\!\left(\sqrt{\frac{d_{\mathrm{out}}}{d_{\mathrm{in}}}}\right),\qquad
+\|\Delta \bm W\|_2=\Theta\!\left(\sqrt{\frac{d_{\mathrm{out}}}{d_{\mathrm{in}}}}\right).
+$$
+这就是同时约束权重与更新的谱条件 [@spectral-feature-learning]，也可以参考科学空间 [@kexuefm-10795]。注意最大放大率只控制可能达到的尺度，若要说明实际特征更新不消失，还需要输入与更新方向对齐。
+
+对独立高斯随机矩阵，谱范数的典型数量级为 $\sigma_W(\sqrt{d_{\mathrm{in}}}+\sqrt{d_{\mathrm{out}}})$。将它代入上面的条件，有
+$$
+\sigma_W
+\asymp
+\frac{\sqrt{d_{\mathrm{out}}/d_{\mathrm{in}}}}
+{\sqrt{d_{\mathrm{in}}}+\sqrt{d_{\mathrm{out}}}},
+$$
+这里 $\asymp$ 表示忽略常数因子后的同阶关系。
+
+沿用第 7 节的维度定义，固定 $d_0,d_3$，令 $d_1=c_1d,d_2=c_2d$，将三类形状分别代入，有
+$$
+\begin{aligned}
+\text{输入层：}\quad
+\sigma_W&\asymp\frac{\sqrt{d_1/d_0}}{\sqrt{d_0}+\sqrt{d_1}}=\Theta(1),\\
+\text{隐藏层：}\quad
+\sigma_W&\asymp\frac{\sqrt{d_2/d_1}}{\sqrt{d_1}+\sqrt{d_2}}=\Theta(d^{-1/2}),\\
+\text{输出层：}\quad
+\sigma_W&\asymp\frac{\sqrt{d_3/d_2}}{\sqrt{d_2}+\sqrt{d_3}}=\Theta(d^{-1}).
+\end{aligned}
+$$
+将标准差平方，就得到第 7 节三类参数的初始化方差阶数。隐藏层的长宽比 $d_2/d_1=c_2/c_1$ 固定，因此非方阵也具有相同的缩放指数。
+
+再将标准差平方，利用 $(\sqrt{d_{\mathrm{in}}}+\sqrt{d_{\mathrm{out}}})^2$ 与 $\max\{d_{\mathrm{in}},d_{\mathrm{out}}\}$ 同阶，有
+$$
+\begin{aligned}
+\sigma_W^2
+&\asymp\frac{d_{\mathrm{out}}/d_{\mathrm{in}}}
+{(\sqrt{d_{\mathrm{in}}}+\sqrt{d_{\mathrm{out}}})^2}\\
+&\asymp\frac{d_{\mathrm{out}}/d_{\mathrm{in}}}
+{\max\{d_{\mathrm{in}},d_{\mathrm{out}}\}}\\
+&=\frac1{d_{\mathrm{in}}}
+\min\!\left\{1,\frac{d_{\mathrm{out}}}{d_{\mathrm{in}}}\right\}.
+\end{aligned}
+$$
+在上述稠密线性层的假设下，还可以把初始化和学习率统一写成输入、输出维度的函数。将固定维度和基准模型相关的常数吸收到比例系数中，有：
+
+| 量                         |                                                       统一的维度阶数                                                       |
+| -------------------------- | :------------------------------------------------------------------------------------------------------------------------: |
+| 独立随机权重的初始化方差   | $\displaystyle\Theta\!\left(\frac1{d_{\mathrm{in}}}\min\!\left\{1,\frac{d_{\mathrm{out}}}{d_{\mathrm{in}}}\right\}\right)$ |
+| 直接有效权重的 SGD 学习率  |                                         $\Theta(d_{\mathrm{out}}/d_{\mathrm{in}})$                                         |
+| 直接有效权重的 Adam 学习率 |                                                $\Theta(1/d_{\mathrm{in}})$                                                 |
+| 直接有效权重的 Muon 学习率 |                               $\Theta\!\left(\sqrt{d_{\mathrm{out}}/d_{\mathrm{in}}}\right)$                               |
+
+SGD 的维度关系也可以由梯度外积得到。在第 7 节的尺度下，反向梯度的典型坐标为 $\Theta(1/d_{\mathrm{out}})$，于是
+$$
+\begin{aligned}
+\|\Delta\bm W\|_2
+&=\eta\|\bm g\bm x^\top\|_2
+=\eta\|\bm g\|_2\|\bm x\|_2\\
+&=\Theta\!\left(\eta\sqrt{\frac{d_{\mathrm{in}}}{d_{\mathrm{out}}}}\right).
+\end{aligned}
+$$
+要满足更新的谱条件，就需要 $\eta=\Theta(d_{\mathrm{out}}/d_{\mathrm{in}})$。Adam 的 $1/d_{\mathrm{in}}$ 则来自前一节的相关求和。这些关系适用于前述稠密特征和梯度尺度；embedding 的 one-hot 输入模长恒为 1，需要单独分析。
+
+Muon 的学习率可以直接从谱条件得到。沿用第 7 节的 Muon 更新，非零梯度的 $\operatorname{msign}(\bm G)$ 将所有非零奇异值置为 1，因此
+$$
+\|\Delta\bm W\|_2
+=\eta\|\operatorname{msign}(\bm G)\|_2
+=\eta.
+$$
+代入更新的谱条件，便有
+$$
+\boxed{\eta=\Theta\!\left(\sqrt{\frac{d_{\mathrm{out}}}{d_{\mathrm{in}}}}\right)}.
+$$
+输入层的维度比为 $d_1/d_0=\Theta(d)$，隐藏层为 $d_2/d_1=\Theta(1)$，输出层为 $d_3/d_2=\Theta(d^{-1})$，对应学习率分别为 $\Theta(\sqrt d)$、$\Theta(1)$、$\Theta(d^{-1/2})$，与第 7 节一致。这个谱范数结论对任意非零梯度矩阵成立，不需要秩一或 Nuclear 范数与 Frobenius 范数同阶的假设。
+
+若实现写成 $\Delta\bm W=-\eta s\operatorname{msign}(\bm G)$，其中 $s>0$ 是额外的形状缩放系数，则谱条件约束的是 $\eta s$。例如取 $s=\sqrt{d_{\mathrm{out}}/d_{\mathrm{in}}}$ 后，配置的学习率 $\eta$ 就可以保持常数阶。
+
+需要注意的是，谱条件控制的是最大放大率，不保证矩阵在所有方向上都近似等距。几何上，线性变换会把单位圆变成椭圆，奇异值就是椭圆的半轴长度，谱范数只取其中最大的一个。例如
+$$
+\bm W=\begin{pmatrix}2&0\\0&1/2\end{pmatrix},\qquad
+\bm W\begin{pmatrix}1\\0\end{pmatrix}=\begin{pmatrix}2\\0\end{pmatrix},\qquad
+\bm W\begin{pmatrix}0\\1\end{pmatrix}=\begin{pmatrix}0\\1/2\end{pmatrix},
+$$
+这个变换沿水平方向拉长到 2 倍，沿竖直方向缩短到一半，谱范数依然为 2。谱范数为2只需保持最大半轴为 2，最小半轴可以任意接近零。因此，控制最大放大率只能限制最长的半轴；要近似保持所有方向的长度，还需要每条半轴都接近 1。在高维空间中，将圆和椭圆换成球和椭球，道理相同。
 
 [^bib]
 
