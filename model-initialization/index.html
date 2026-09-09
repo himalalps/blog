@@ -107,7 +107,7 @@
 <span class="math-tight-anchor" aria-hidden="true"></span>
 \[d_{\mathrm{in}}\sigma_W^2=1
 \quad\Longrightarrow\quad
-\boxed{\operatorname{Var}(\bm W_{li})=\frac1{d_{\mathrm{in}}}}.\]
+\boxed{\operatorname{Var}(\bm W_{li})=\frac1{d_{\mathrm{in}}}}\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>这就是通常所说的 LeCun 初始化<span class="cite-ref" id="citation--lecun1998efficient-backprop--1"> (<a href="#bib-lecun1998efficient-backprop">1</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">1. </span>LeCun Y, Bottou L, Orr GB, Müller K-R. Efficient backprop. Neural networks: Tricks of the trade. 2002. p. 9–50. <a href="https://doi.org/10.1007/3-540-49430-8_2" target="_blank" rel="noopener noreferrer">https://doi.org/10.1007/3-540-49430-8_2</a></span></span></span>。可以理解为，每个输出项依赖于 \(d_{\mathrm{in}}\) 个输入坐标，所以需要除以 \(d_{\mathrm{in}}\) 来保持单坐标的二阶矩不变。</p>
 <p>不过，保持单坐标尺度不等于保持整个向量的模长，有</p>
@@ -153,7 +153,7 @@
 <span class="math-tight-anchor" aria-hidden="true"></span>
 \[\frac{d_{\mathrm{in}}\sigma_W^2+d_{\mathrm{out}}\sigma_W^2}{2}=1
 \quad\Longrightarrow\quad
-\boxed{\operatorname{Var}(\bm W_{li})=\frac2{d_{\mathrm{in}}+d_{\mathrm{out}}}}.\]
+\boxed{\operatorname{Var}(\bm W_{li})=\frac2{d_{\mathrm{in}}+d_{\mathrm{out}}}}\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>这就是 Xavier 初始化<span class="cite-ref" id="citation--glorot2010initialization--3"> (<a href="#bib-glorot2010initialization">3</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">3. </span>Glorot X, Bengio Y. Understanding the difficulty of training deep feedforward neural networks. Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics. 2010. p. 249–56. <a href="https://proceedings.mlr.press/v9/glorot10a.html" target="_blank" rel="noopener noreferrer">https://proceedings.mlr.press/v9/glorot10a.html</a></span></span></span>。当 \(d_{\mathrm{in}}=d_{\mathrm{out}}\) 时，它与 LeCun 初始化相同；非方阵时，则只保证两个乘子的平均值为 1。</p>
 <p>例如 \(d_{\mathrm{out}}=4d_{\mathrm{in}}\)，忽略非线性时得到：</p>
@@ -202,7 +202,7 @@
 =\frac12\mathbb E[\bm z_l^2]
 =\frac12d_{\mathrm{in}}\sigma_W^2\mathbb E[\bm x_i^2],
 \qquad
-\boxed{\operatorname{Var}(\bm W_{li})=\frac2{d_{\mathrm{in}}}}.\]
+\boxed{\operatorname{Var}(\bm W_{li})=\frac2{d_{\mathrm{in}}}}\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>这就是适用于 ReLU 的 Kaiming 初始化<span class="cite-ref" id="citation--he2015rectifiers--4"> (<a href="#bib-he2015rectifiers">4</a>)<span class="cite-pop"><span class="cite-pop-entry"><span class="cite-pop-num">4. </span>He K, Zhang X, Ren S, Sun J. Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification. 2015. <a href="https://arxiv.org/abs/1502.01852" target="_blank" rel="noopener noreferrer">https://arxiv.org/abs/1502.01852</a></span></span></span>。这里采用 fan-in 来保持前向二阶矩，相应的 fan-out 版本为 \(2/d_{\mathrm{out}}\)，用于控制反向信号的尺度。</p>
 <p>注意 ReLU 输出一般不再是零均值，因此二阶矩与方差并不相等。例如，设单个预激活坐标 \(\bm z_l\sim\mathcal N(0,\sigma_z^2)\)，其中 \(\sigma_z^2=\mathbb E[\bm z_l^2]>0\) 是其方差，使用积分变量 \(t\) 可得</p>
@@ -333,7 +333,7 @@
 =\Delta \bm W \bm x
 =-\eta(\bm g\bm x^\top)\bm x
 =-\eta\bm g(\bm x^\top\bm x)
-=-\eta \bm g\,\|\bm x\|_2^2}.
+=-\eta \bm g\,\|\bm x\|_2^2.}
 \end{equation}\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>由式 \(\eqref{eq:conditional-output-second-moment}\)，初始化时输出单坐标的 RMS 为 \(\sigma_W\|\bm x\|_2=\Theta(\sigma_W\sqrt{d_{\mathrm{in}}})\)。而由式 \(\eqref{eq:direct-feature-update}\)，更新量中第 \(l\) 个输出坐标的每一项为 \(-\eta\bm g_l\bm x_i^2\)，其中 \(i\) 遍历输入坐标。对固定样本和输出坐标 \(l\)，这些项具有相同的因子 \(-\eta\bm g_l\)，且 \(\bm x_i^2\ge0\)，因此不会相互抵消，而是按 \(\sum_i\bm x_i^2=\Theta(d_{\mathrm{in}})\) 累积，可以看到，相比之前已经差出平方量级。</p>
@@ -422,7 +422,7 @@
 \operatorname{Var}((\bm W_1)_{ki})=\Theta(1),\qquad
 \operatorname{Var}((\bm W_2)_{jk})=\Theta(d^{-1}),\qquad
 \operatorname{Var}((\bm W_3)_{lj})=\Theta(d^{-2})
-}.\]
+}\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>此时 \(\mathbb E[\bm y_l^2]=\Theta(d^{-1})\)，初始输出可以趋于零。输出层更小的方差，是为了容纳训练中不随宽度消失的相关特征变化。接下来检查各层学习率应如何缩放，才能产生这样的常数阶变化。</p>
 <p><strong>先看 SGD。</strong> 假设激活导数和损失对输出的梯度具有非零的常数阶尺度。记两层预激活为 \(\bm z_1=\bm W_1\bm x_0\)、\(\bm z_2=\bm W_2\bm x_1\)，预激活梯度为 \(\bm\delta_1=\partial\mathcal L/\partial\bm z_1\)、\(\bm\delta_2=\partial\mathcal L/\partial\bm z_2\)，输出梯度为 \(\bm g_y=\partial\mathcal L/\partial\bm y\)。链式法则给出</p>
@@ -690,7 +690,7 @@
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>代入更新的谱条件，便有</p>
 <span class="math-tight-anchor" aria-hidden="true"></span>
-\[\boxed{\eta=\Theta\!\left(\sqrt{\frac{d_{\mathrm{out}}}{d_{\mathrm{in}}}}\right)}.\]
+\[\boxed{\eta=\Theta\!\left(\sqrt{\frac{d_{\mathrm{out}}}{d_{\mathrm{in}}}}\right)}\]
 <span class="math-tight-after-anchor" aria-hidden="true"></span>
 <p>输入层的维度比为 \(d_1/d_0=\Theta(d)\)，隐藏层为 \(d_2/d_1=\Theta(1)\)，输出层为 \(d_3/d_2=\Theta(d^{-1})\)，对应学习率分别为 \(\Theta(\sqrt d)\)、\(\Theta(1)\)、\(\Theta(d^{-1/2})\)，与第 7 节一致。这个谱范数结论对任意非零梯度矩阵成立，不需要秩一或 Nuclear 范数与 Frobenius 范数同阶的假设。</p>
 <p>若实现写成 \(\Delta\bm W=-\eta s\operatorname{msign}(\bm G)\)，其中 \(s>0\) 是额外的形状缩放系数，则谱条件约束的是 \(\eta s\)。例如取 \(s=\sqrt{d_{\mathrm{out}}/d_{\mathrm{in}}}\) 后，配置的学习率 \(\eta\) 就可以保持常数阶。</p>
