@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets';
 import { render } from 'astro:content';
 import Layout from '../layouts/Layout.astro';
+import TableOfContents from '../components/TableOfContents.astro';
 import { getAllPosts, toPostSummary, type Post } from '../lib/posts';
 
 export async function getStaticPaths() {
@@ -17,13 +18,15 @@ interface Props {
 }
 
 const { post } = Astro.props;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
 const { title, description, lang, cover, coverAlt } = post.data;
 const { date } = toPostSummary(post);
 const productionHostname = Astro.site?.hostname;
 ---
 
 <Layout title={`${title} - Vibe`} description={description} lang={lang}>
+  <div class="post-layout">
+  <TableOfContents headings={headings} />
   <article class="post-content">
     <p class="date">
       <time datetime={date}>{date}</time>
@@ -34,6 +37,7 @@ const productionHostname = Astro.site?.hostname;
     {cover && <Image class="post-cover" src={cover} alt={coverAlt ?? title} />}
     <Content />
   </article>
+  </div>
   {import.meta.env.PROD && productionHostname && (
     <script is:inline define:vars={{ productionHostname }}>
       // Local previews and alternate deployment domains must not send counts.
@@ -48,6 +52,25 @@ const productionHostname = Astro.site?.hostname;
 </Layout>
 
 <style>
+  .post-layout {
+    --post-header-offset: 7rem;
+  }
+
+  .post-content {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .post-layout :global(.post-content :is(h2, h3, h4, h5, h6)) {
+    scroll-margin-top: var(--post-header-offset);
+  }
+
+  @media (max-width: 768px) {
+    .post-layout {
+      --post-header-offset: 10rem;
+    }
+  }
+
   .date {
     display: flex;
     flex-wrap: wrap;

@@ -1,0 +1,272 @@
+---
+import type { MarkdownHeading } from 'astro';
+
+interface Props {
+  headings: MarkdownHeading[];
+}
+
+// The heading plugin appends a visible # permalink before Astro collects text.
+const sections = Astro.props.headings.filter(({ depth }) => depth >= 2);
+---
+
+{sections.length > 0 && (
+  <aside class="post-outline" aria-label="文章大纲">
+    <button
+      class="outline-toggle"
+      type="button"
+      aria-controls="outline-panel"
+      aria-expanded="false"
+      aria-label="展开文章大纲"
+      title="展开文章大纲"
+    >
+      <span class="outline-current">{sections[0].text.replace(/#$/, '').trim()}</span>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+    </button>
+    <div class="outline-panel" id="outline-panel" inert>
+      <nav class="outline-links" aria-label="章节导航">
+        <ol>
+          {sections.map(({ depth, slug, text }) => (
+            <li style={`--outline-depth: ${depth - 2}`}>
+              <a href={`#${encodeURIComponent(slug)}`} data-heading-id={slug}>
+                {text.replace(/#$/, '').trim()}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </div>
+  </aside>
+)}
+
+<script>
+  const outline = document.querySelector<HTMLElement>('.post-outline');
+  if (outline) {
+    const toggle = outline.querySelector<HTMLButtonElement>('.outline-toggle')!;
+    const currentLabel = outline.querySelector<HTMLElement>('.outline-current')!;
+    const panel = outline.querySelector<HTMLElement>('.outline-panel')!;
+    const nav = outline.querySelector<HTMLElement>('.outline-links')!;
+    const layout = outline.closest<HTMLElement>('.post-layout')!;
+    const header = document.querySelector('body > header');
+    const entries = Array.from(outline.querySelectorAll<HTMLAnchorElement>('a[data-heading-id]'))
+      .map(link => ({ link, heading: document.getElementById(link.dataset.headingId!) }))
+      .filter((entry): entry is { link: HTMLAnchorElement; heading: HTMLElement } => !!entry.heading);
+
+    let expanded = false;
+    const syncToggleLabel = () => {
+      const section = currentLabel.textContent?.trim() ?? '';
+      toggle.setAttribute('aria-label', `${section}，${expanded ? '收起' : '展开'}文章大纲`);
+      toggle.title = section;
+    };
+    const setExpanded = (value: boolean) => {
+      expanded = value;
+      if (!value && panel.contains(document.activeElement)) toggle.focus({ preventScroll: true });
+      outline.dataset.expanded = String(value);
+      panel.inert = !value;
+      toggle.setAttribute('aria-expanded', String(value));
+      syncToggleLabel();
+      if (value) requestAnimationFrame(() => {
+        const current = nav.querySelector<HTMLElement>('[aria-current="location"]');
+        if (current) nav.scrollTop += current.getBoundingClientRect().top
+          - nav.getBoundingClientRect().top - nav.clientHeight / 2 + current.offsetHeight / 2;
+      });
+    };
+    toggle.addEventListener('click', () => setExpanded(!expanded));
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && expanded) setExpanded(false);
+    });
+    document.addEventListener('click', event => {
+      if (expanded && event.target instanceof Node && !outline.contains(event.target)) {
+        setExpanded(false);
+      }
+    });
+    nav.addEventListener('click', event => {
+      if (event.target instanceof Element && event.target.closest('a')) {
+        setExpanded(false);
+      }
+    });
+    setExpanded(false);
+
+    let offset = 112;
+    let active: HTMLAnchorElement | undefined;
+    let pending = false;
+    const update = () => {
+      pending = false;
+      let current = entries[0];
+      for (const entry of entries) {
+        if (entry.heading.getBoundingClientRect().top > offset + 8) break;
+        current = entry;
+      }
+      if (window.scrollY > 0 && window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
+        current = entries.at(-1);
+      }
+      if (!current || current.link === active) return;
+      active?.removeAttribute('aria-current');
+      active = current.link;
+      active.setAttribute('aria-current', 'location');
+      currentLabel.textContent = active.textContent?.trim() ?? '';
+      syncToggleLabel();
+
+      // Scroll only the directory, never the document or the focused element.
+      if (expanded) {
+        const linkRect = active.getBoundingClientRect();
+        const navRect = nav.getBoundingClientRect();
+        if (linkRect.top < navRect.top || linkRect.bottom > navRect.bottom) {
+          nav.scrollTop += linkRect.top - navRect.top - nav.clientHeight / 2 + linkRect.height / 2;
+        }
+      }
+    };
+    const schedule = () => {
+      if (!pending) {
+        pending = true;
+        requestAnimationFrame(update);
+      }
+    };
+    const syncOffset = () => {
+      offset = (header?.getBoundingClientRect().height ?? 96) + 64;
+      layout.style.setProperty('--post-header-offset', `${offset}px`);
+      schedule();
+    };
+    if (header) new ResizeObserver(syncOffset).observe(header);
+    // Images, fonts and MathJax can move headings without a window resize.
+    const article = layout.querySelector('.post-content');
+    if (article) new ResizeObserver(schedule).observe(article);
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    window.addEventListener('hashchange', schedule);
+    syncOffset();
+  }
+</script>
+
+<style>
+  .post-outline {
+    --outline-width: min(15rem, calc(100vw - 1.5rem));
+    position: fixed;
+    top: calc(var(--post-header-offset) - 2.5rem);
+    left: 0.75rem;
+    width: max-content;
+    z-index: 90;
+  }
+
+  .outline-panel {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    left: 0;
+    width: var(--outline-width);
+    padding: 0.4rem;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 18px rgb(0 0 0 / 14%);
+    border-radius: 4px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-0.4rem);
+    transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+  }
+
+  .post-outline[data-expanded='true'] .outline-panel {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .outline-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    min-width: 4.5rem;
+    max-width: var(--outline-width);
+    height: 28px;
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--text-color);
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+    box-shadow: none;
+    transform: none;
+    text-transform: none;
+  }
+
+  .outline-toggle:hover {
+    color: var(--accent-color);
+    background: var(--code-bg);
+  }
+
+  .outline-toggle svg {
+    flex-shrink: 0;
+    transition: transform 0.16s ease;
+  }
+
+  .outline-current {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .post-outline[data-expanded='true'] .outline-toggle svg {
+    transform: rotate(180deg);
+  }
+
+  .outline-links {
+    display: block;
+    max-height: min(65dvh, calc(100dvh - var(--post-header-offset) - 1rem));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    padding: 0.25rem 0 0.75rem;
+  }
+
+  ol {
+    list-style: none;
+  }
+
+  a {
+    display: block;
+    padding: 0.4rem 0.5rem 0.4rem calc(0.75rem + var(--outline-depth) * 0.85rem);
+    border-left: 2px solid transparent;
+    font-size: 0.82rem;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+
+  a:hover,
+  a[aria-current='location'] {
+    color: var(--accent-color);
+    border-left-color: var(--accent-color);
+    background: var(--code-bg);
+  }
+
+  a:focus-visible,
+  .outline-toggle:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: -2px;
+  }
+
+  @media (min-width: 1200px) {
+    .post-outline {
+      /* Fit inside the left margin of the centered 800px article, with a 24px gap. */
+      --outline-width: min(15rem, calc(50vw - 25rem - 2.25rem));
+      left: max(0.75rem, calc(50vw - 25rem - 1.5rem - 15rem));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .post-outline,
+    .outline-panel,
+    .outline-toggle svg {
+      transition: none;
+    }
+  }
+
+  @media print {
+    .post-outline {
+      display: none;
+    }
+  }
+</style>
