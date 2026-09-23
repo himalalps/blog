@@ -13,7 +13,7 @@ bibliography: "ref.bib"
 
 LeCun、Xavier 和 Kaiming 初始化主要处理第一个问题。Transformer 的残差缩放和归一化可以处理第二个问题。$\mu$P（Maximal Update Parametrization）则把第三个问题纳入设计：它同时规定初始化、前向乘数和不同参数的学习率如何随宽度变化。
 
-## 统一记号
+## 1. 统一记号
 
 本文采用列向量约定，
 $$
